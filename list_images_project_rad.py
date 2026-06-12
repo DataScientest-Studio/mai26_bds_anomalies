@@ -84,9 +84,9 @@ def get_image_details(cat, split, qual, img):
     return img_info
 
 
-# ==========================
+
 # LOOP DATASET
-# ==========================
+
 rows = []
 
 print("\nCategories found:")
@@ -105,9 +105,7 @@ for cat in root_path.iterdir():
     print("TEST EXISTS:", test_dir.exists())
     print("TRAIN EXISTS:", train_dir.exists())
 
-    # ==========================
     # TEST
-    # ==========================
     for qual in test_dir.iterdir():
         print("TEST -", qual.name)
 
@@ -118,9 +116,7 @@ for cat in root_path.iterdir():
         for img in qual.iterdir():
             rows.append(get_image_details(cat, "test", qual, img))
 
-    # ==========================
-    # TRAIN
-    # ==========================
+  
     for qual in train_dir.iterdir():
         print("TRAIN -", qual.name)
         assert qual.name == "good", Exception("Train quality should be good")
@@ -128,9 +124,7 @@ for cat in root_path.iterdir():
         for img in qual.iterdir():
             rows.append(get_image_details(cat, "train", qual, img))
 
-# ==========================
-# SAVE CSV
-# ==========================
+
 images = pd.DataFrame(rows, columns=["category", "type", "quality", "file", "extension",
                                      "width", "height", "mode", "bands", "type_image",
                                      "mask", "mask_bands", "mask_mode", "mask_type"])
