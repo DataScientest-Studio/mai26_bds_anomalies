@@ -23,6 +23,18 @@ dans un sous-dossier "augmented" du sous-dossier "ground_truth".
 Le script ne modifie pas les images originales.
 Exemple : python augmentation_MVTec.py 100 bottle"""
 
+# Certaines catégories du dataset MVTec ne peuvent pas recevoir certaines 
+# transformations (ex: cable ne peut pas être retourné verticalement)
+category_exceptions = {
+    'cable': ['flip', 'rotate'],
+    'capsule': ['flip', 'rotate'],
+    'metal_nut': ['flip'],
+    'pill': ['flip', 'rotate'],
+    'transistor': ['flip', 'rotate'],
+    'wood': ['flip', 'rotate'],
+    'zipper': ['flip', 'rotate'],
+}
+
 # Vérification des arguments
 if len(sys.argv) > 1:
     min_images = int(sys.argv[1])
@@ -35,11 +47,11 @@ if len(sys.argv) > 2:
 else:
     category = None
 
-def randomize_image(image_shape, zoom_max=1.08):
+def randomize_image(category, image_shape, zoom_max=1.08):
     """ Décide des transformations aléatoires à appliquer à l'image. 
     Renvoie un dictionnaire avec les transformations à appliquer """
 
-    zoom = np.random.uniform(1.0, zoom_max)
+    zoom = np.random.uniform(1.01, zoom_max)
     crop_w = int(image_shape[1] / zoom)
     crop_h = int(image_shape[0] / zoom)
     x_start = np.random.randint(0, image_shape[1] - crop_w + 1)
@@ -47,86 +59,86 @@ def randomize_image(image_shape, zoom_max=1.08):
     x_end = x_start + crop_w
     y_end = y_start + crop_h
 
-    return {
-        "flip": {
-            "code": np.random.randint(0,5),
-        },
-        "rotate": {
-            "code": np.random.randint(0,2), # 1 chance sur 2 d'ajouter une rotation
-            "angle": np.random.choice([180,90,-90],1)[0],
-        },
-        "noise": {
-            "code": np.random.randint(0,3), # 1 chance sur 3 d'ajouter du bruit
-            "noise": np.random.normal(0, 2, image_shape).astype(np.uint8),
-        },
-        "brightness": {
-            "code": np.random.randint(0,2), # 1 chance sur 2 de changer la luminosité
-            "value": np.random.randint(-25, 25),
-        },
-        "zoom": {
-            "code": np.random.randint(0,2), # 1 chance sur 2 d'ajouter un zoom
-            "value": zoom, 
-            "x_start": x_start, 
-            "y_start": y_start, 
-            "x_end": x_end,
-            "y_end": y_end,
-        },
-    }
+    has_apply=False
+    while has_apply==False:
+        result = {
+            "flip": {
+                "apply": np.random.randint(3)==0, # 1 chance sur 3 d'appliquer un flip
+                "type": np.random.randint(0,3),
+            },
+            "rotate": {
+                "apply": np.random.randint(2)==0, # 1 chance sur 2 d'ajouter une rotation
+                "angle": np.random.choice([180,90,-90],1)[0],
+            },
+            "noise": {
+                "apply": np.random.randint(3)==0, # 1 chance sur 3 d'ajouter du bruit
+                "noise": np.random.normal(0, 2, image_shape).astype(np.uint8),
+            },
+            "brightness": {
+                "apply": np.random.randint(2)==0, # 1 chance sur 2 de changer la luminosité
+                "value": np.random.randint(-25, 25),
+            },
+            "zoom": {
+                "apply": np.random.randint(2)==0, # 1 chance sur 2 d'ajouter un zoom
+                "value": zoom, 
+                "x_start": x_start, 
+                "y_start": y_start, 
+                "x_end": x_end,
+                "y_end": y_end,
+            },
+        }
 
-def flip(image, flip_code):
+        # on désactive les transformations interdites pour certaines catégories
+        if category in category_exceptions:
+            for transformation in category_exceptions[category]:
+                result[transformation]['apply']=False
+    
+        # Vérifier qu'on a au moins 1 transformation qui va s'appliquer
+        has_apply = any(v["apply"] for v in result.values())
+
+    return result
+
+def flip(image, flip_type):
     """ Retourne l'image retournée selon le code spécifié :
     - 0 : retournement vertical
     - 1 : retournement horizontal
     - 2 : retournement les deux
-    - autre : pas de retournement 
-    Renvoie l'image éventuellement modifiée"""
+    Renvoie l'image modifiée"""
     # Retournement aléatoire
-    if flip_code <= 1: # si 0 ou 1, flip vertical ou horizontal
-        augmented_image = cv2.flip(image, flip_code)
-    elif flip_code==2: # si 2, flip horizontal et vertical
+    if flip_type <= 1: # si 0 ou 1, flip vertical ou horizontal
+        augmented_image = cv2.flip(image, flip_type)
+    elif flip_type==2: # si 2, flip horizontal et vertical
         augmented_image = cv2.flip(image, 0)
         augmented_image = cv2.flip(image, 1)
-    else:# si 4, aucun flip
-        return image
     return augmented_image
 
-def rotate(image, rotate_code, angle):
-    """ Décide aléatoirement de faire une rotation de l'image.
-    L'angle de rotation est aléatoire.
-    Renvoie l'image éventuellement modifiée"""
-    # Retournement aléatoire
-    r = rotate_code # 1 chance sur 2 de faire une rotation
-    if r == 0:
-        return image
+def rotate(image, angle):
+    """ Applique une rotation à l'image.
+    Renvoie l'image modifiée"""
     
     M = cv2.getRotationMatrix2D((image.shape[1] / 2, image.shape[0] / 2), angle, 1)
     augmented_image = cv2.warpAffine(image, M, (image.shape[1], image.shape[0]))
     return augmented_image
 
-def gaussian_noise(image, gaussian_code, noise):
-    """ Ajoute aléatoirement du bruit gaussien à l'image.
-    Renvoie l'image éventuellement modifiée"""
-    if gaussian_code != 0:
-        return image
+def gaussian_noise(image, noise):
+    """ Ajoute du bruit à l'image.
+    Renvoie l'image modifiée"""
+    
     augmented_image = cv2.addWeighted(image, 1, noise, 0.05, 0)
     return augmented_image
 
-def brightness(image, brightness_code, value):
-    """ Change aléatoirement la luminosité de l'image.
-    Renvoie l'image éventuellement modifiée"""
-    if brightness_code == 0:
-        return image
+def brightness(image, value):
+    """ Change la luminosité de l'image.
+    Renvoie l'image modifiée"""
     
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     hsv[:, :, 2] = cv2.add(hsv[:, :, 2], value)
     augmented_image = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
     return augmented_image
 
-def zoom(image, zoom_code, x_start, x_end, y_start, y_end):
-    """ Applique aléatoirement un petit zoom sur l'image.
-    Renvoie l'image éventuellement modifiée"""
-    if zoom_code == 0:
-        return image
+def zoom(image, x_start, x_end, y_start, y_end):
+    """ Applique le zoom demandé sur l'image et resize l'image zoomée à la taille originale.
+    Renvoie l'image modifiée"""
     h, w = image.shape[:2]
 
     augmented_image = image[y_start:y_end, x_start:x_end]
@@ -136,16 +148,24 @@ def zoom(image, zoom_code, x_start, x_end, y_start, y_end):
 def transform_image(image, rnd_params, is_mask=False):
     """ Applique les transformations aléatoires à l'image selon les paramètres spécifiés.
     Renvoie l'image modifiée"""
-    image=flip(image, rnd_params["flip"]["code"])
-    image=rotate(image, rnd_params["rotate"]["code"], rnd_params["rotate"]["angle"])
-    if not is_mask:
-        image=gaussian_noise(image, rnd_params["noise"]["code"], rnd_params["noise"]["noise"])
-        image=brightness(image, rnd_params["brightness"]["code"], rnd_params["brightness"]["value"])
-    image=zoom(image, rnd_params["zoom"]["code"], rnd_params["zoom"]["x_start"], rnd_params["zoom"]["x_end"], 
-                rnd_params["zoom"]["y_start"], rnd_params["zoom"]["y_end"])
+    if rnd_params["flip"]["apply"]:
+        image=flip(image, rnd_params["flip"]["type"])
+
+    if rnd_params["rotate"]["apply"]:
+        image=rotate(image, rnd_params["rotate"]["angle"])
+
+    if rnd_params["noise"]["apply"] and not is_mask:
+        image=gaussian_noise(image, rnd_params["noise"]["noise"])
+
+    if rnd_params["brightness"]["apply"] and not is_mask:
+        image=brightness(image, rnd_params["brightness"]["value"])
+    
+    if rnd_params["zoom"]["apply"]:
+        image=zoom(image, rnd_params["zoom"]["x_start"], rnd_params["zoom"]["x_end"], 
+                    rnd_params["zoom"]["y_start"], rnd_params["zoom"]["y_end"])
     return image
 
-def augment_image(image_path, mask_path, output_directory, mask_output_directory, num_augmentations=5, copy_original=True):
+def augment_image(category, image_path, mask_path, output_directory, mask_output_directory, num_augmentations=5, copy_original=True):
     """ Applique des transformations aléatoires à une image et sauvegarde les images augmentées dans un dossier de sortie.
     - image_path : chemin vers l'image à augmenter
     - mask_path : chemin vers le masque de l'image à augmenter
@@ -171,7 +191,7 @@ def augment_image(image_path, mask_path, output_directory, mask_output_directory
     
     for i in range(num_augmentations):
         image=image_init.copy()
-        rnd_params = randomize_image(image.shape)
+        rnd_params = randomize_image(category, image.shape)
 
         # Image
         image=transform_image(image, rnd_params)
@@ -234,7 +254,8 @@ for i, category in enumerate(categories):
             progress = (images.index(image) + 1) / len(images) * 100
             print(f"\rProgression : [{'#' * int(progress // 2)}{' ' * (50 - int(progress // 2))}] {progress:.2f}%", end='')
             
-            augment_image(image_path=Path.joinpath(dir_defect, f"{image[0]}{image[1]}"),
+            augment_image(category=category, 
+                          image_path=Path.joinpath(dir_defect, f"{image[0]}{image[1]}"),
                           mask_path=Path.joinpath(dir_defect_mask, f"{image[0]}_mask{image[1]}"),
                           output_directory=augmented_dir,
                           mask_output_directory=augmented_mask_dir,
