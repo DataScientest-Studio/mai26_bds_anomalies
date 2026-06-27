@@ -10,3 +10,4 @@ numpy  ==2.4.2
 jupyter_client ==8.9.1
 ipykernel ==7.3.0
 nbformat >=4.2.0
+opencv-python ==4.13.0
