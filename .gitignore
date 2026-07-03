@@ -1,4 +1,6 @@
 .env
 .venv
 data/
+output/
 *.zip
+__pycache__
