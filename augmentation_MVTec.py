@@ -9,19 +9,29 @@ load_dotenv()
 
 root_path = Path(getenv("PATH_DATASET"))
 
-"""Le script doit recevoir en argument le nombre minimal d'images 
-à avoir pour chaque type d'anomalie et peut recevoir le nom du sous-dossier 
-du dataset MVTec à traiter (tous si pas défini).
+"""Arguments :
+- (obligatoire) le nombre minimal d'images à avoir pour chaque type d'anomalie, 
+- (optionnel) le nom du sous-dossier du dataset MVTec à traiter (tous si pas défini), 
+- (optionnel) --train : si présent, le script va générer des images supplémentaires 
+pour le sous-dossier train, sinon uniquement pour les anomalies du sous-dossier test.
+
 Le script va parcourir les sous-dossiers du dataset MVTec et pour chaque type d'anomalie,
 il va vérifier le nombre d'images présentes. Si ce nombre est inférieur au nombre minimal
 d'images, le script va générer des images supplémentaires en appliquant des transformations aléatoires
 sur les images existantes. Les images générées seront sauvegardées dans un sous-dossier
 "augmented" du sous-dossier de l'anomalie. Si le sous-dossier "augmented" existe 
-déjà, il sera vidé avant de sauvegarder les nouvelles images. 
+déjà, il sera vidé avant de sauvegarder les nouvelles images.
 Les mêmes transformations seront appliquées aux masques correspondants, qui seront sauvegardés 
 dans un sous-dossier "augmented" du sous-dossier "ground_truth".
 Le script ne modifie pas les images originales.
-Exemple : python augmentation_MVTec.py 100 bottle"""
+
+Si '--train' est présent, le script procèdera de la même façon mais uniquement en parcourant le 
+sous-dossier train et la qualité "good". (Il n'y a pas de masques pour les images du sous-dossier 
+train, donc les transformations ne seront appliquées qu'aux images.)
+
+Exemples : 
+python augmentation_MVTec.py 100 bottle
+python augmentation_MVTec.py 500 cable --train"""
 
 # Certaines catégories du dataset MVTec ne peuvent pas recevoir certaines 
 # transformations (ex: cable ne peut pas être retourné verticalement)
@@ -43,9 +53,26 @@ else:
     raise ValueError("Argument obligatoire : nombre minimal d'images pour chaque type d'anomalie.")
     
 if len(sys.argv) > 2:
-    category = sys.argv[2]
+    # Je vérifie si c'est une catégorie ou --train
+    if sys.argv[2] == "--train":
+        # Je vérifie si le troisième argument est présent et si c'est une catégorie
+        if len(sys.argv) > 3:
+            category = sys.argv[3]
+            train_mode = True
+        else:
+            category = None
+            train_mode = True
+    else:
+        category = sys.argv[2]
+        # Vérification du troisième argument
+        if len(sys.argv) > 3 and sys.argv[3] == "--train":
+            train_mode = True
+        else:
+            train_mode = False
 else:
     category = None
+    train_mode = False
+
 
 def randomize_image(category, image_shape, zoom_max=1.08):
     """ Décide des transformations aléatoires à appliquer à l'image. 
@@ -173,21 +200,24 @@ def augment_image(category, image_path, mask_path, output_directory, mask_output
     - mask_output_directory : chemin vers le dossier où sauvegarder les masques augmentés
     - num_augmentations : nombre d'images augmentées à générer (par défaut 5)"""
     image_init = cv2.imread(str(image_path))
-    mask_init = cv2.imread(str(mask_path))
+    if mask_path is not None:
+        mask_init = cv2.imread(str(mask_path))
 
     # Récupération du nom de l'image avec l'extension
     image_name = Path(image_path).stem
     image_extension = Path(image_path).suffix
-    mask_name = Path(mask_path).stem
-    mask_extension = Path(mask_path).suffix
+    if mask_path is not None:
+        mask_name = Path(mask_path).stem
+        mask_extension = Path(mask_path).suffix
 
     # Copie de l'image si copy_original=True
     if copy_original == True:
         output_file_path = Path.joinpath(output_directory, f"{image_name}{image_extension}")
         cv2.imwrite(output_file_path, image_init)
 
-        output_mask_file_path = Path.joinpath(mask_output_directory, f"{mask_name}{mask_extension}")
-        cv2.imwrite(output_mask_file_path, mask_init)
+        if mask_path is not None:
+            output_mask_file_path = Path.joinpath(mask_output_directory, f"{mask_name}{mask_extension}")
+            cv2.imwrite(output_mask_file_path, mask_init)
     
     for i in range(num_augmentations):
         image=image_init.copy()
@@ -200,11 +230,12 @@ def augment_image(category, image_path, mask_path, output_directory, mask_output
         cv2.imwrite(output_file_path, image)
 
         # Masque
-        mask=mask_init.copy()
-        mask=transform_image(mask, rnd_params, is_mask=True)
-        # Enregistrer le masque augmenté
-        output_mask_file_path = Path.joinpath(mask_output_directory, f"{mask_name}_{i:02d}{mask_extension}")
-        cv2.imwrite(output_mask_file_path, mask)
+        if mask_path is not None:
+            mask=mask_init.copy()
+            mask=transform_image(mask, rnd_params, is_mask=True)
+            # Enregistrer le masque augmenté
+            output_mask_file_path = Path.joinpath(mask_output_directory, f"{mask_name}_{i:02d}{mask_extension}")
+            cv2.imwrite(output_mask_file_path, mask)
 
 def empty_directory(directory):
     """ Vide le contenu d'un dossier et le crée s'il n'existe pas.
@@ -225,16 +256,25 @@ else:
 
 for i, category in enumerate(categories):
     print(f"Traitement de la catégorie : {category} ({i+1}/{len(categories)})")
-    # Répertoire des images de test
-    dir_images = Path.joinpath(root_path, category, "test")
-    dir_masks = Path.joinpath(root_path, category, "ground_truth")
     
-    defects = [defect.name for defect in dir_images.iterdir() if defect.is_dir() and defect.name != "good"]
+    if train_mode:
+        # Répertoire des images de train
+        dir_images = Path.joinpath(root_path, category, "train")
+        # Répertoire des masques de train (inexistant)
+        dir_masks = None
+        defects=['good']
+    else:
+        # Répertoire des images de test
+        dir_images = Path.joinpath(root_path, category, "test")
+        dir_masks = Path.joinpath(root_path, category, "ground_truth")
+        
+        defects = [defect.name for defect in dir_images.iterdir() if defect.is_dir() and defect.name != "good"]
 
     for j, defect in enumerate(defects):
         # Compter les images
         dir_defect = Path.joinpath(dir_images, defect)
-        dir_defect_mask = Path.joinpath(dir_masks, defect)
+        if dir_masks is not None:
+            dir_defect_mask = Path.joinpath(dir_masks, defect)
         images = [(image.stem, image.suffix) for image in dir_defect.iterdir() if image.is_file()]
         
         nb_images_to_create = max(0, min_images - len(images))
@@ -243,21 +283,24 @@ for i, category in enumerate(categories):
         
         # Vide les dossiers 'augmented'
         augmented_dir = Path.joinpath(dir_defect, 'augmented')
-        augmented_mask_dir = Path.joinpath(dir_defect_mask, 'augmented')
         empty_directory(augmented_dir)
-        empty_directory(augmented_mask_dir)
+        if dir_masks is not None:
+            augmented_mask_dir = Path.joinpath(dir_defect_mask, 'augmented')
+            empty_directory(augmented_mask_dir)
+        else:
+            augmented_mask_dir = None
         
-        # Ajout d'une barre de progression pour le traitement des images
-
         for image in images:
             # Progress bar
             progress = (images.index(image) + 1) / len(images) * 100
             print(f"\rProgression : [{'#' * int(progress // 2)}{' ' * (50 - int(progress // 2))}] {progress:.2f}%", end='')
             
+            mask_path = Path.joinpath(dir_defect_mask, f"{image[0]}_mask{image[1]}") if dir_masks is not None else None
+
             augment_image(category=category, 
-                          image_path=Path.joinpath(dir_defect, f"{image[0]}{image[1]}"),
-                          mask_path=Path.joinpath(dir_defect_mask, f"{image[0]}_mask{image[1]}"),
-                          output_directory=augmented_dir,
-                          mask_output_directory=augmented_mask_dir,
-                          num_augmentations=nb_augmented_images_per_image, 
-                          copy_original=True)
+                        image_path=Path.joinpath(dir_defect, f"{image[0]}{image[1]}"),
+                        mask_path=mask_path,
+                        output_directory=augmented_dir,
+                        mask_output_directory=augmented_mask_dir,
+                        num_augmentations=nb_augmented_images_per_image, 
+                        copy_original=True)
