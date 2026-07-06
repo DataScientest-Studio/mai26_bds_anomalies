@@ -1,17 +1,13 @@
-# package dotenv is used to load environment variables from a .env file in version 1.2.1
-python-dotenv ==1.2.1
-# package pandas is used for data manipulation and analysis in version 3.0.3
-pandas ==3.0.3
-# package plotly is used for creating interactive visualizations in version 5.14.0
-plotly ==6.8.0
-# package Pillow is used for image processing in version 11.3.0
-Pillow ==11.3.0
-numpy  ==2.4.2
-jupyter_client ==8.9.1
-ipykernel ==7.3.0
-opencv-python-headless ==5.0.0
-matplotlib ==3.11.0
-scikit-learn ==1.9.0
-seaborn == 0.13.2
+python-dotenv==1.2.2
+pandas==3.0.3
+plotly==6.8.0
+Pillow==12.3.0
+numpy==2.5.1
+jupyter_client==8.9.1
+ipykernel==7.3.0
+opencv-python-headless==5.0.0.93
+matplotlib==3.11.0
+scikit-learn==1.9.0
+seaborn==0.13.2
 tensorflow-cpu==2.21.0
-nbformat >=4.2.0
+nbformat==5.10.4
