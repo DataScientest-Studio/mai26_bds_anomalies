@@ -1,6 +1,6 @@
 .env
 .venv
 data/
-output/
+output/**/*.joblib
 *.zip
 __pycache__

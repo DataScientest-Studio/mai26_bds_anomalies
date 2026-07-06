@@ -10,13 +10,18 @@ def create_model(resized_dimension=(128,128)):
         name="input"
     )
     x = layers.Dense(
-        256, 
+        2048, 
         activation="relu", 
         name="enc_dense1"
     )(encoder_input)
-    latent = layers.Dense(
-        32, 
+    x = layers.Dense(
+        512, 
         activation="relu", 
+        name="enc_dense2"
+    )(x)
+    latent = layers.Dense(
+        128, 
+        activation="linear", 
         name="bottleneck"
     )(x)
 
@@ -24,14 +29,19 @@ def create_model(resized_dimension=(128,128)):
 
     # décodeur
     decoder_input = layers.Input(
-        shape=(32,), 
+        shape=(128,), 
         name="latent_input"
     )
     x = layers.Dense(
-        256, 
+        512, 
         activation="relu", 
         name="dec_dense1"
     )(decoder_input)
+    x = layers.Dense(
+        2048, 
+        activation="relu", 
+        name="dec_dense2"
+    )(x)
     decoder_output = layers.Dense(
         resized_dimension[0]*resized_dimension[1], 
         activation="sigmoid", 
@@ -46,8 +56,8 @@ def create_model(resized_dimension=(128,128)):
 
     autoencoder.compile(
         optimizer="adam",
-        loss="mape",
-        metrics=["mae", "accuracy"]
+        loss="mse",
+        metrics=["mae"]
     )
     return encoder, decoder, autoencoder
 
@@ -59,7 +69,8 @@ def save_history_plot(history, file_name):
     """
     plt.figure(figsize=(16,6))
     plt.plot(history.history["loss"], "--", label="Entraînement")
-    plt.plot(history.history["val_loss"], "-", label="Validation")
+    if "val_loss" in history.history:
+        plt.plot(history.history["val_loss"], "-", label="Validation")
     plt.legend()
     plt.xlabel("Epochs")
     plt.ylabel("Loss")
