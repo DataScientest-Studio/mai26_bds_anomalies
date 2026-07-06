@@ -46,7 +46,8 @@ def create_model(resized_dimension=(128,128)):
 
     autoencoder.compile(
         optimizer="adam",
-        loss="mse",
+        loss="mape",
+        metrics=["mae", "accuracy"]
     )
     return encoder, decoder, autoencoder
 

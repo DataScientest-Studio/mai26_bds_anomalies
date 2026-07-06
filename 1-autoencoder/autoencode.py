@@ -9,6 +9,15 @@ from tensorflow.keras import layers, Model
 from autoencoder_model import create_model, save_history_plot
 from autoencoder_load_images import load_liste_images
 
+from dotenv import load_dotenv
+from pathlib import Path
+
+load_dotenv()
+image_path = Path(os.getenv("PATH_DATASET"))
+
+# output_path : parent directory et output
+output_path = Path(__file__).parent.parent.joinpath("output")
+
 """ Ce script charge les images, crée un autoencodeur, l'entraîne sur les images et sauvegarde le modèle 
 et l'historique de l'entraînement."""
 help = """Usage : python autoencode.py [--no_train]
@@ -33,19 +42,20 @@ if len(sys.argv) > 2:
     sys.exit(1)
 
 ### SCRIPT PRINCIPAL ###
-resized_dimension = (128,128)
+resized_dimension = (64,64)
 
 # Si le répertoire output n'existe pas, on le crée
-if not os.path.exists("output"):
-    os.makedirs("output")
+if not os.path.exists(output_path):
+    os.makedirs(output_path)
 
-images_originales, images = load_liste_images(resized_dimension)
+images_originales, images = load_liste_images(image_path, resized_dimension, category='bottle', type='train')
 
+print(f"Nombre d'images chargées : {len(images)}")
 # encodeur
 if no_train:
-    autoencoder = joblib.load("output/autoencoder.joblib")
-    encoder = joblib.load("output/encoder.joblib")
-    decoder = joblib.load("output/decoder.joblib")
+    autoencoder = joblib.load(output_path / "autoencoder.joblib")
+    encoder = joblib.load(output_path / "encoder.joblib")
+    decoder = joblib.load(output_path / "decoder.joblib")
 else:
     encoder, decoder, autoencoder = create_model(resized_dimension)
 
@@ -53,19 +63,19 @@ else:
 
     history = autoencoder.fit(
         images, images, 
-        batch_size=10, 
-        epochs=20, 
+        batch_size=32, 
+        epochs=40, 
         shuffle=True,
-        validation_split=0.1,  # 10% des images pour la validation
+        validation_split=0.15,  # 15% des images pour la validation
         verbose=1, 
     )
 
     # Sauvegarde du modèle
-    joblib.dump(autoencoder, "output/autoencoder.joblib")
-    joblib.dump(encoder, "output/encoder.joblib")
-    joblib.dump(decoder, "output/decoder.joblib")
+    joblib.dump(autoencoder, output_path / "autoencoder.joblib")
+    joblib.dump(encoder, output_path / "encoder.joblib")
+    joblib.dump(decoder, output_path / "decoder.joblib")
 
-    save_history_plot(history, "output/history_plot.png")
+    save_history_plot(history, output_path / "history_plot.png")
 
 # Visualisation des images reconstruites
 nb_col = 6
@@ -92,4 +102,4 @@ for i, image_originale in enumerate(images_originales[:nb_col]):
     plt.axis('off')
     plt.title(f"Erreur\nMAE={image_erreur.mean():.2f}\n(max={image_erreur.max() :.0f})")
     
-plt.savefig("output/images_reconstruites.png")
+plt.savefig(output_path / "images_reconstruites.png")

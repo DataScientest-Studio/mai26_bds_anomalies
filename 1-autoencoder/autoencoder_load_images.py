@@ -1,7 +1,7 @@
 import numpy as np
-import pandas as pd
 from pathlib import Path
 import cv2
+import random
 
 current_path = Path(__file__).parent.resolve()
 image_list_path = current_path.joinpath('image_list.csv')
@@ -24,21 +24,31 @@ def loading_bar(ind, total, hide_if_100=True, bar_length=40):
         print(f"\rProgression : [{bar}] {progress*100:.1f}%", end="")
 
 
-def load_liste_images(resized_dimension=(128,128), category='bottle', type='train', limit_to=None, image_list_path=image_list_path):
+def load_liste_images(images_path, resized_dimension=(128,128), category='bottle', type='train', quality='good', limit_to=None):
     """
     Load a list of images from the specified category and type, resize them, and return both the original and processed images.
     - resized_dimension: tuple specifying the new size (width, height) (default (128,128))
     - category: category of images to load (default 'bottle')
+    - quality: quality of images to load (default 'good')
     - type: type of images to load (default 'train')
     - limit_to: maximum number of images to load (default None, which means no limit)
-    - image_list_path: path to the CSV file containing image metadata
     Returns:
     - images_originales: numpy array of original images (yet resized and in gray)
     - images: numpy array of processed images (flattened and normalized)
     """
-    df = pd.read_csv(image_list_path, dtype={'file':str})
 
-    fichiers = df.loc[(df["category"]==category) & (df['type']==type), ["file", "extension", "type_image"]]
+    images_path = images_path.joinpath(category, type, quality)
+    # check if 'augmented' directory exists, if not keep images_path as is, otherwise use 'augmented' directory
+    augmented_path = images_path.joinpath('augmented')
+    if augmented_path.exists():
+        images_path = augmented_path
+
+    # count images in images_path
+    fichiers = []
+    for f in images_path.glob("*"):
+        if f.is_file() and f.suffix.lower() in ['.jpg', '.jpeg', '.png']:
+            fichiers.append(f)
+    random.shuffle(fichiers)
 
     if limit_to is None or limit_to <= 0:
         nb_images = len(fichiers)
@@ -46,26 +56,19 @@ def load_liste_images(resized_dimension=(128,128), category='bottle', type='trai
         nb_images = limit_to
 
     image_list = []
-    i = 0
-    for _, f in fichiers[:nb_images].iterrows():
+    for i, f in enumerate(fichiers[:nb_images]):
         # display visual progress bar (bar that is growing up to 100%)
-        i+= 1
-        loading_bar(i, nb_images)
+        loading_bar(i+1, nb_images)
 
-        file_path = current_path.joinpath('data', 'bottle', f["file"] + f["extension"])
+        file_path = images_path.joinpath(fichiers[i])
         #print(file_path, ":", f["type_image"])
-        if f["type_image"]=='C':
-            img = cv2.imread(str(file_path), cv2.IMREAD_COLOR)
-        else:
-            img = cv2.imread(str(file_path), cv2.IMREAD_GRAYSCALE)
+        img = cv2.imread(str(file_path), cv2.IMREAD_GRAYSCALE)
 
         if img is None:
             print(f"Erreur de lecture : {file_path}")
         else:
             
             img_resized = cv2.resize(img, resized_dimension)
-            if f["type_image"]=='C':
-                img_resized = cv2.cvtColor(img_resized, cv2.COLOR_BGR2GRAY)
             
             image_list.append(img_resized)
 
