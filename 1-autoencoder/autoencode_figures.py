@@ -48,12 +48,16 @@ def compare_orig_encoded(orig_images, encoded_images, output_path, output_filena
     plt.savefig(output_path / output_filename)
 
 # Histogramme des erreurs sur les images d'entraînement (bonnes)
-def histogramme_erreurs(orig_images_flat, encoded_images_flat, y_true, threshold, output_path, output_filename="histogramme_erreurs.png", category=""):
-    mse = ((orig_images_flat - encoded_images_flat)**2).mean(axis=1)
+def histogramme_erreurs(orig_train_flat, encoded_train_flat, 
+                        orig_test_flat, encoded_test_flat, y_true, 
+                        threshold, 
+                        output_path, output_filename="histogramme_erreurs.png", category=""):
+    mse_train = ((orig_train_flat - encoded_train_flat)**2).mean(axis=1)
+    mse_test = ((orig_test_flat - encoded_test_flat)**2).mean(axis=1)
 
     plt.figure(figsize=(10,6))
-    plt.hist(mse[y_true==0], bins=30, color='green', alpha=0.7, label='Train (bonnes)')
-    plt.xlabel('Erreur')
+    plt.hist(mse_train, bins=30, color='lightgreen', alpha=0.7, label='Train (good)')
+    plt.xlabel('Erreur MSE')
     plt.ylabel('Fréquence')
     plt.title(f'Histogramme des erreurs - {category}')
 
@@ -61,7 +65,8 @@ def histogramme_erreurs(orig_images_flat, encoded_images_flat, y_true, threshold
     plt.axvline(threshold, color='red', linestyle='dashed', linewidth=2, label=f'Seuil (95ème percentile) = {threshold:.5f}')
 
     # Histogramme des erreurs sur les images de test (anomalies)
-    plt.hist(mse[y_true==1], bins=30, color='orange', alpha=0.7, label='Test (anomalies)')
+    plt.hist(mse_test[y_true==0], bins=30, color='green', alpha=0.7, label='Test (good)')
+    plt.hist(mse_test[y_true==1], bins=30, color='orange', alpha=0.7, label='Test (anomalies)')
     plt.legend()
     plt.savefig(output_path / output_filename)
 
