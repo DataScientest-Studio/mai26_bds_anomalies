@@ -46,6 +46,7 @@ def load_liste_images(images_path, resized_dimension=(128,128), category='bottle
 
     current_count=0
     image_list = []
+    nb_channels=1
     for images_path in images_paths:
 
         # check if 'augmented' directory exists, if not keep images_path as is, otherwise use 'augmented' directory
@@ -72,23 +73,30 @@ def load_liste_images(images_path, resized_dimension=(128,128), category='bottle
 
             file_path = images_path.joinpath(fichiers[i])
             #print(file_path, ":", f["type_image"])
-            img = cv2.imread(str(file_path), cv2.IMREAD_GRAYSCALE)
+            img = cv2.imread(str(file_path))
 
             if img is None:
                 print(f"Erreur de lecture : {file_path}")
             else:
-                
+                # Si couleur, convertir en RGB, sinon en niveaux de gris
+                if len(img.shape) == 3 and img.shape[2] == 3:
+                    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                    nb_channels = 3
+                else:
+                    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                    nb_channels = 1
+
                 img_resized = cv2.resize(img, resized_dimension)
                 
                 image_list.append(img_resized)
 
         images_originales = np.array(image_list)
         # écrasement des pixels sur une dimension
-        images = images_originales.reshape(-1, resized_dimension[0] * resized_dimension[1])
+        images = images_originales.reshape(-1, resized_dimension[0] * resized_dimension[1] * nb_channels)
 
         # rescaling des pixels entre 0 et 1
         images = images.astype("float32") / 255.
 
     print(f"\rNombre d'images chargées : {len(images)}")
 
-    return images
+    return images, nb_channels

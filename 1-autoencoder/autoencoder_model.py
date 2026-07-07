@@ -3,10 +3,12 @@ import matplotlib.pyplot as plt
 
 from tensorflow.keras import layers, Model
 
-def create_model(resized_dimension=(128,128)):
+def create_model(resized_dimension=(128,128), nb_channels=1):
+    latent_space = 2**(5+nb_channels)
+
     # encodeur
     encoder_input = layers.Input(
-        shape=(resized_dimension[0]*resized_dimension[1],), 
+        shape=(resized_dimension[0]*resized_dimension[1]*nb_channels,), 
         name="input"
     )
     x = layers.Dense(
@@ -15,12 +17,17 @@ def create_model(resized_dimension=(128,128)):
         name="enc_dense1"
     )(encoder_input)
     x = layers.Dense(
-        512, 
+        1024, 
         activation="relu", 
         name="enc_dense2"
     )(x)
+    x = layers.Dense(
+        512, 
+        activation="relu", 
+        name="enc_dense3"
+    )(x)
     latent = layers.Dense(
-        128, 
+        latent_space, 
         activation="linear", 
         name="bottleneck"
     )(x)
@@ -29,7 +36,7 @@ def create_model(resized_dimension=(128,128)):
 
     # décodeur
     decoder_input = layers.Input(
-        shape=(128,), 
+        shape=(latent_space,), 
         name="latent_input"
     )
     x = layers.Dense(
@@ -38,12 +45,17 @@ def create_model(resized_dimension=(128,128)):
         name="dec_dense1"
     )(decoder_input)
     x = layers.Dense(
-        2048, 
+        1024, 
         activation="relu", 
         name="dec_dense2"
     )(x)
+    x = layers.Dense(
+        2048, 
+        activation="relu", 
+        name="dec_dense3"
+    )(x)
     decoder_output = layers.Dense(
-        resized_dimension[0]*resized_dimension[1], 
+        resized_dimension[0]*resized_dimension[1]*nb_channels, 
         activation="sigmoid", 
         name="output"
     )(x)
