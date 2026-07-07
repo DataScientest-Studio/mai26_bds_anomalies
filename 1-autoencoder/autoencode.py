@@ -114,29 +114,55 @@ plt.savefig(output_path / "images_reconstruites_train_good.png")
 
 # Histogramme des erreurs sur les images d'entraînement (bonnes)
 test_pred_good = autoencoder.predict(images)
-mse_good = ((images - test_pred_good)**2).mean(axis=1)
+mse_train_good = ((images - test_pred_good)**2).mean(axis=1)
 
 plt.figure(figsize=(10,6))
-plt.hist(mse_good, bins=30, color='green', alpha=0.7, label='Train (bonnes)')
+plt.hist(mse_train_good, bins=30, color='green', alpha=0.7, label='Train (bonnes)')
 plt.xlabel('Erreur')
 plt.ylabel('Fréquence')
-plt.title('Histogramme des erreurs (train)')
-plt.legend()
+plt.title(f'Histogramme des erreurs - {category}')
+
+# Définition d'une limite pour détecter les anomalies (par exemple, le 95ème percentile des erreurs sur les images d'entraînement)
+threshold = np.percentile(mse_train_good, 95)
+plt.axvline(threshold, color='red', linestyle='dashed', linewidth=2, label=f'Seuil (95ème percentile) = {threshold:.5f}')
 
 # Histogramme des erreurs sur les images de test (anomalies)
-images_anomaly = load_liste_images(image_path, resized_dimension, category=category, type='test', quality="anomaly", include_augmented=False)
-print(f"Nombre d'images de test chargées : {len(images_anomaly)}")
+images_test_anomaly = load_liste_images(image_path, resized_dimension, category=category, type='test', quality="anomaly", include_augmented=False)
+print(f"Nombre d'images de test chargées : {len(images_test_anomaly)}")
 
-test_pred_anomaly = autoencoder.predict(images_anomaly)
-mse_anomaly = ((images_anomaly - test_pred_anomaly)**2).mean(axis=1)
+test_pred_anomaly = autoencoder.predict(images_test_anomaly)
+mse_anomaly = ((images_test_anomaly - test_pred_anomaly)**2).mean(axis=1)
 
 plt.hist(mse_anomaly, bins=30, color='orange', alpha=0.7, label='Test (anomalies)')
+plt.legend()
 plt.savefig(output_path / f"histogramme_erreurs_{category}.png")
+
+# Détection des anomalies sur les images de test
+images_test_good = load_liste_images(image_path, resized_dimension, category=category, type='test', quality="good", include_augmented=False)
+print(f"Nombre d'images de test chargées : {len(images_test_good)}")
+
+test_pred_good = autoencoder.predict(images_test_good)
+mse_test_good = ((images_test_good - test_pred_good)**2).mean(axis=1)
+
+# matrice de confusion
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
+
+y_true = np.concatenate([np.zeros(len(mse_test_good)), np.ones(len(mse_anomaly))])
+y_pred = np.concatenate([mse_test_good > threshold, mse_anomaly > threshold])
+
+plt.figure(figsize=(8,6))
+cm = confusion_matrix(y_true, y_pred, normalize='true')
+sns.heatmap(cm, annot=True, fmt='.3f', cmap='Blues', xticklabels=['Good', 'Anomalies'], yticklabels=['Good', 'Anomalies'])
+plt.xlabel('Prédiction')
+plt.ylabel('Réel')
+plt.title(f'Matrice de confusion - {category}')
+plt.savefig(output_path / f"matrice_confusion_{category}.png")
 
 # ROC curve
 from sklearn.metrics import roc_curve, auc
 
-fpr, tpr, thresholds = roc_curve(np.concatenate([np.zeros(len(mse_good)), np.ones(len(mse_anomaly))]), np.concatenate([mse_good, mse_anomaly]))
+fpr, tpr, thresholds = roc_curve(np.concatenate([np.zeros(len(mse_train_good)), np.ones(len(mse_anomaly))]), np.concatenate([mse_train_good, mse_anomaly]))
 roc_auc = auc(fpr, tpr)
 
 plt.figure(figsize=(8,6))
@@ -155,12 +181,12 @@ plt.savefig(output_path / f"roc_curve.png")
 # Visualisation des images reconstruites pour les anomalies
 # Visualisation des images reconstruites
 nb_col = 6
-test_pred = autoencoder.predict(images_anomaly[:nb_col])
+test_pred = autoencoder.predict(images_test_anomaly[:nb_col])
 
 plt.figure(figsize=(14,8))
 for i in range(nb_col):
     
-    image_originale = images_anomaly[i].reshape(resized_dimension[0], resized_dimension[1])
+    image_originale = images_test_anomaly[i].reshape(resized_dimension[0], resized_dimension[1])
     image_autoencodee = test_pred[i].reshape(resized_dimension[0], resized_dimension[1])
     image_erreur = np.abs(image_originale - image_autoencodee)
     
