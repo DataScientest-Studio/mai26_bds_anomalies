@@ -54,6 +54,8 @@ for i, category in enumerate(categories):
         # Si l'image est en niveau de gris, la convertir en RGB pour l'affichage
         if len(img.shape) == 2:
             img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+        else:
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         plt.imshow(img)
     except Exception as e:
         print(f"Erreur lors de la lecture de l'image {img_path}: {e}")
@@ -95,6 +97,8 @@ for i, category in enumerate(categories):
             # Si l'image est en niveau de gris, la convertir en RGB pour l'affichage
             if len(img.shape) == 2:
                 img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+            else:
+                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             plt.imshow(img)
         except Exception as e:
             print(f"Erreur lors de la lecture de l'image {img_path}: {e}")
