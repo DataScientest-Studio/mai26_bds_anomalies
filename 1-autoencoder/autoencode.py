@@ -49,16 +49,16 @@ if not os.path.exists(output_path):
     os.makedirs(output_path)
 
 # encodeur
+category = 'bottle'
 if no_train:
-    autoencoder = joblib.load(output_path / "autoencoder.joblib")
-    encoder = joblib.load(output_path / "encoder.joblib")
-    decoder = joblib.load(output_path / "decoder.joblib")
+    autoencoder = joblib.load(output_path / f"autoencoder_{category}.joblib")
+    #encoder = joblib.load(output_path / "encoder.joblib")
+    #decoder = joblib.load(output_path / "decoder.joblib")
 
-    images = load_liste_images(image_path, resized_dimension, category='bottle', type='train', quality="good", include_augmented=False)
+    images = load_liste_images(image_path, resized_dimension, category=category, type='train', quality="good", include_augmented=False)
     print(f"Nombre d'images chargées : {len(images)}")
 else:
-    
-    images = load_liste_images(image_path, resized_dimension, category='bottle', type='train', quality="good", include_augmented=True)
+    images = load_liste_images(image_path, resized_dimension, category=category, type='train', quality="good", include_augmented=True)
     print(f"Nombre d'images chargées : {len(images)}")
 
     encoder, decoder, autoencoder = create_model(resized_dimension)
@@ -75,9 +75,9 @@ else:
     )
 
     # Sauvegarde du modèle
-    joblib.dump(autoencoder, output_path / "autoencoder.joblib")
-    joblib.dump(encoder, output_path / "encoder.joblib")
-    joblib.dump(decoder, output_path / "decoder.joblib")
+    joblib.dump(autoencoder, output_path / f"autoencoder_{category}.joblib")
+    #joblib.dump(encoder, output_path / "encoder.joblib")
+    #joblib.dump(decoder, output_path / "decoder.joblib")
 
     save_history_plot(history, output_path / "history_plot.png")
 
@@ -124,14 +124,14 @@ plt.title('Histogramme des erreurs (train)')
 plt.legend()
 
 # Histogramme des erreurs sur les images de test (anomalies)
-images_anomaly = load_liste_images(image_path, resized_dimension, category='bottle', type='test', quality="anomaly", include_augmented=False)
+images_anomaly = load_liste_images(image_path, resized_dimension, category=category, type='test', quality="anomaly", include_augmented=False)
 print(f"Nombre d'images de test chargées : {len(images_anomaly)}")
 
 test_pred_anomaly = autoencoder.predict(images_anomaly)
 mse_anomaly = ((images_anomaly - test_pred_anomaly)**2).mean(axis=1)
 
 plt.hist(mse_anomaly, bins=30, color='orange', alpha=0.7, label='Test (anomalies)')
-plt.savefig(output_path / "histogramme_erreurs.png")
+plt.savefig(output_path / f"histogramme_erreurs_{category}.png")
 
 # ROC curve
 from sklearn.metrics import roc_curve, auc
@@ -148,9 +148,9 @@ plt.yticks(np.arange(0, 1.06, 0.05))
 plt.grid()
 plt.xlabel('False Positive Rate')
 plt.ylabel('True Positive Rate')
-plt.title('Receiver Operating Characteristic')
+plt.title('ROC Curve')
 plt.legend(loc="lower right")
-plt.savefig(output_path / "roc_curve.png")
+plt.savefig(output_path / f"roc_curve.png")
 
 # Visualisation des images reconstruites pour les anomalies
 # Visualisation des images reconstruites
