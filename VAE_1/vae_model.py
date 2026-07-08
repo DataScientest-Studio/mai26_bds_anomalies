@@ -40,7 +40,7 @@ def create_model(resized_dimension=(128,128), nb_channels=1, kl_weight=0.1):
     latent_space = 2**(3+nb_channels)  # 16 (gris) ou 32 (couleur)
     h, w = resized_dimension
 
-    # ---------- ENCODEUR (convolutif) ----------
+    #encodeur convoutif
     encoder_input = layers.Input(shape=(h, w, nb_channels), name="input")
 
     x = layers.Conv2D(16, 3, strides=2, activation="relu", padding="same", name="enc_conv1")(encoder_input)  # h/2
@@ -58,7 +58,7 @@ def create_model(resized_dimension=(128,128), nb_channels=1, kl_weight=0.1):
 
     encoder = Model(encoder_input, [z_mean, z_log_var, z], name="encodeur")
 
-    # ---------- DECODEUR (convolutif, symétrique) ----------
+    #decodeur convolutif symmetrique avec transpose
     decoder_input = layers.Input(shape=(latent_space,), name="latent_input")
 
     x = layers.Dense(
@@ -78,7 +78,6 @@ def create_model(resized_dimension=(128,128), nb_channels=1, kl_weight=0.1):
 
     decoder = Model(decoder_input, decoder_output, name="decodeur")
 
-    # ---------- VAE complet ----------
     z_mean_out, z_log_var_out, z_out = encoder(encoder_input)
     autoencoder_output = decoder(z_out)
     autoencoder = Model(encoder_input, autoencoder_output, name="auto_encodeur")
