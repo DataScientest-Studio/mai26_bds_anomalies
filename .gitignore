@@ -2,5 +2,7 @@
 .venv
 data/
 output/**/*.joblib
+output/**/*.keras
+output/**/*.h5
 *.zip
 __pycache__
