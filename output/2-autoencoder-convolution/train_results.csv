@@ -1,0 +1,3 @@
+date,category,resized_dimension,batch_size,color_augmentation,move_augmentation,model_type,loss,error_score,roc_auc,tpr,fpr
+2026-07-10 19:20:20,bottle,"(128, 128)","16","True","True","convtl","mae","mse",0.939748201438849,0.9424460431654677,0.5
+2026-07-10 19:21:57,transistor,"(128, 128)","16","True","True","convtl","mae","mse",0.7666666666666666,0.625,0.2

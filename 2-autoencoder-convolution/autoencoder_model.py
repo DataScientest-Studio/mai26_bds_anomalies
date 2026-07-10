@@ -6,9 +6,13 @@ from tensorflow.keras.models import Model, load_model
 from tensorflow.keras.layers import Input, Rescaling, Conv2D, MaxPooling2D, UpSampling2D, Dropout, Dense, Flatten, Reshape
 from tensorflow.keras.layers import RandomRotation, RandomZoom, RandomContrast, RandomBrightness, RandomTranslation
 
+from tensorflow.keras.applications import EfficientNetB0
+
 import tensorflow_probability as tfp
 
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
+
+transfer_learning=None
 
 def load_autoencoder(filepath):
     return load_model(filepath)
@@ -309,6 +313,99 @@ def get_model_dense(resized_dimension, nb_channels):
 
     return inputs, outputs
 
+def get_model_convtl(resized_dimension, nb_channels): 
+    """Encodeur convolutionnel avec transfer learning et décodeur convolutionnel"""
+
+    # encodeur
+    inputs = Input(
+        shape=(*resized_dimension, nb_channels), 
+        name="input"
+    )
+
+    encoder_inputs = Rescaling(255.)(inputs)
+
+    encoder = EfficientNetB0(
+        include_top=False,
+        weights="imagenet",
+        input_shape=(*resized_dimension, nb_channels),
+    )
+    # encodeur entièrement gelé.
+    encoder.trainable = False
+
+    x = encoder(encoder_inputs, training=False)
+
+    # décodeur
+    x = Conv2D(
+        256,
+        kernel_size=(1,1), 
+        padding='same', 
+        activation="relu",
+    )(x)
+    x = UpSampling2D(
+        (2,2), 
+    )(x)
+    # x = Dropout( 0.2 )(x)
+
+    x = Conv2D(
+        128,
+        kernel_size=(3,3), 
+        padding='same', 
+        activation="relu",
+    )(x)
+    x = UpSampling2D(
+        (2,2), 
+    )(x)
+    # x = Dropout( 0.2 )(x)
+
+    x = Conv2D(
+        64,
+        kernel_size=(3,3), 
+        padding='same', 
+        activation="relu",
+    )(x)
+    x = UpSampling2D(
+        (2,2), 
+    )(x)
+    # x = Dropout( 0.2 )(x)
+
+    x = Conv2D(
+        32,
+        kernel_size=(3,3), 
+        padding='same', 
+        activation="relu",
+    )(x)
+    x = UpSampling2D(
+        (2,2), 
+    )(x)
+    # x = Dropout( 0.2 )(x)
+
+    x = Conv2D(
+        16,
+        kernel_size=(3,3), 
+        padding='same', 
+        activation="relu",
+    )(x)
+    x = UpSampling2D(
+        (2,2), 
+    )(x)
+    # x = Dropout( 0.2 )(x)
+
+    x = Conv2D(
+        16,
+        kernel_size=(3,3), 
+        padding='same', 
+        activation="relu",
+    )(x)
+    
+    outputs = Conv2D(
+        nb_channels,
+        kernel_size=(3,3), 
+        padding='same', 
+        activation="sigmoid",
+    )(x)
+
+    return inputs, outputs
+
 def create_model(model = "conv", loss="mse", error_score="mae", resized_dimension=(256,256), nb_channels=3):
 
     valid_scores=['mae', 'mse']
@@ -325,8 +422,10 @@ def create_model(model = "conv", loss="mse", error_score="mae", resized_dimensio
         inputs, outputs = get_model_conv_dense(resized_dimension, nb_channels)
     elif model=="dense":
         inputs, outputs = get_model_dense(resized_dimension, nb_channels)
+    elif model=="convtl":
+        inputs, outputs = get_model_convtl(resized_dimension, nb_channels)
     else:
-        raise ValueError(f"model {model} not valid. Must be in: 'conv', 'dense_conv', 'conv_dense', 'dense'")
+        raise ValueError(f"model {model} not valid. Must be in: 'conv', 'dense_conv', 'conv_dense', 'dense', 'convtl'")
 
     # auto-encodeur
     autoencoder = Model(inputs = inputs, outputs = outputs, name="auto_encodeur")

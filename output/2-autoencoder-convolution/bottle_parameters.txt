@@ -1,8 +1,12 @@
---- Paramètres utilisés - catégorie bottle ---
- resized_dimension = (64, 64)
-        batch_size = 32
-color_augmentation = False
- move_augmentation = False
-        model_type = conv_dense
-              loss = mae
-       error_score = mse
+###################################################
+### Paramètres utilisés - catégorie bottle      ###
+###################################################
+Date : 2026-07-10 19:18:43
+categories         = ['bottle', 'transistor']
+resized_dimension  = (128, 128)
+batch_size         = 16
+color_augmentation = True
+move_augmentation  = True
+model_type         = convtl
+loss               = mae
+error_score        = mse

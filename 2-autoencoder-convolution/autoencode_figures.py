@@ -125,6 +125,8 @@ def draw_confusion_matrix(y_true, y_pred, output_path, output_filename="matrice_
     plt.title(f'Matrice de confusion - {category}')
     plt.savefig(output_path / output_filename)
 
+    return cm
+
 @logging_function
 def save_classification_report(y_true, y_pred, output_path, output_filename="classification_report.txt", comment="", append=False):
     with open(output_path / output_filename, "a" if append else "w") as f:
@@ -150,3 +152,5 @@ def draw_roc_curve(mses, labels, output_path, output_filename="roc_curve.png", c
     plt.title(f"ROC Curve - {category}")
     plt.legend(loc="lower right")
     plt.savefig(output_path / output_filename)
+
+    return roc_auc

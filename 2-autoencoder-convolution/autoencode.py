@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 #import seaborn as sns
 import joblib
 import os
+from datetime import datetime
 
 import autoencode_figures as fig
 
@@ -75,15 +76,17 @@ if not os.path.exists(output_path):
 #    'hazelnut', 'leather', 'metal_nut', 'pill', 'screw',
 #    'tile', 'toothbrush', 'transistor', 'wood', 'zipper',
 #    'metal_plate']
-categories = ['bottle', 'transistor']
+categories = ['cable', 'capsule', 'carpet', 'grid',
+   'hazelnut', 'leather', 'metal_nut', 'pill', 'screw',
+   'tile', 'toothbrush', 'wood', 'zipper']
 
-resized_dimension = (64,64)
-batch_size = 32
+resized_dimension = (128,128)
+batch_size = 16
 
-color_augmentation=False
-move_augmentation=False
+color_augmentation=True
+move_augmentation=True
 
-model_type = 'conv_dense' # 'conv', 'dense_conv', 'conv_dense', 'dense'
+model_type = 'convtl' # 'conv', 'dense_conv', 'conv_dense', 'dense'
 loss = 'mae' # 'mae', 'mse'
 error_score = 'mse' # 'mae', 'mse'
 
@@ -91,20 +94,56 @@ threshold_percentile = 80
 
 ##########################################
 
+parameters = dict(
+    resized_dimension = resized_dimension, 
+    batch_size = batch_size, 
+    color_augmentation = color_augmentation, 
+    move_augmentation = move_augmentation, 
+    model_type = model_type, 
+    loss = loss, 
+    error_score = error_score, 
+)
+
+def parameters_to_str(category):
+    texte = f"###################################################\n"
+    texte += f"### Paramètres utilisés - catégorie {category:11} ###\n"
+    texte += f"###################################################\n"
+    texte += f"Date : {datetime.today().strftime('%Y-%m-%d %H:%M:%S')}\n"
+    for p in parameters.keys():
+        texte += f"{p:<18} = {str(parameters[p])}\n"
+    return texte
+
+def save_train_result(category, roc_auc, tpr, fpr):
+    results = dict(
+        roc_auc=roc_auc, 
+        tpr=tpr, 
+        fpr=fpr, 
+    )
+
+    # check if csv file exists
+    result_file = output_path / "train_results.csv"
+    if not (result_file).is_file():
+        with open(result_file, "w") as f:
+            header = "date,category"
+            header += "," + ",".join(parameters.keys())
+            header += "," + ",".join(results.keys())
+            f.write(header + "\n")
+
+    with open(output_path / "train_results.csv", "a") as f:
+        line = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
+        line += "," + category
+        line += "," + ",".join(map(lambda p: '"'+ str(p) + '"', parameters.values()))
+        line += "," + ",".join(map(str, results.values()))
+        f.write(line+"\n")
+
+
 data_augmenter = DataAugmentation(colors=False, moves=False)
 
 for category in categories:
 
     # Save model parameters
     with open(output_path / f"{category}_parameters.txt", "w") as f:
-        f.write(f"--- Paramètres utilisés - catégorie {category} ---\n")
-        f.write(f" resized_dimension = {str(resized_dimension)}\n")
-        f.write(f"        batch_size = {str(batch_size)}\n")
-        f.write(f"color_augmentation = {str(color_augmentation)}\n")
-        f.write(f" move_augmentation = {str(move_augmentation)}\n")
-        f.write(f"        model_type = {str(model_type)}\n")
-        f.write(f"              loss = {str(loss)}\n")
-        f.write(f"       error_score = {str(error_score)}\n")
+        f.write(parameters_to_str(category))
 
     model_file = output_path / f"{category}_autoencoder.keras"
 
@@ -207,7 +246,7 @@ for category in categories:
     )
 
     # matrice de confusion
-    fig.draw_confusion_matrix(y_true, y_pred, output_path, f"{category}_matrice_confusion.png", category)
+    cm = fig.draw_confusion_matrix(y_true, y_pred, output_path, f"{category}_matrice_confusion.png", category)
 
     # classification_report
     comment = f"{category.upper()} - seuil {threshold_percentile}% ({error_threshold :.10f})"
@@ -223,7 +262,7 @@ for category in categories:
         fig.save_classification_report(y_true, y_pred_new, output_path, f"{category}_classification_report.txt", comment, append=True)
 
     # ROC curve
-    fig.draw_roc_curve(test_errors, 
+    roc_auc = fig.draw_roc_curve(test_errors, 
                     y_true, 
                     output_path, 
                     output_filename=f"{category}_roc_curve.png", 
@@ -231,3 +270,11 @@ for category in categories:
 
     # Visualisation des images reconstruites pour les anomalies
     fig.compare_orig_encoded(test_ds, autoencoder, output_path, f"{category}_images_reconstruites_test_anomalies.png", only_label=1)
+
+    # Save model parameters
+    if train_cat:
+        tn, fp, fn, tp = cm.ravel()
+        tpr = tp / (tp + fn)
+        fpr = fp / (fp + tn)
+
+        save_train_result(category, roc_auc, tpr, fpr)
