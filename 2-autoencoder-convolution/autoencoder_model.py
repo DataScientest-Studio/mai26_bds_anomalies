@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 import tensorflow as tf
 from tensorflow.keras.models import Model, load_model
-from tensorflow.keras.layers import Input, Rescaling, Conv2D, MaxPooling2D, UpSampling2D, Dropout
+from tensorflow.keras.layers import Input, Rescaling, Conv2D, MaxPooling2D, UpSampling2D, Dropout, Dense, Flatten, Reshape
 from tensorflow.keras.layers import RandomRotation, RandomZoom, RandomContrast, RandomBrightness, RandomTranslation
 
 import tensorflow_probability as tfp
@@ -13,23 +13,96 @@ from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCh
 def load_autoencoder(filepath):
     return load_model(filepath)
 
-def get_callbacks(filepath):
+def get_callbacks(filepath, error_score="mae"):
     callbacks=[]
 
     callbacks.append(
-        ReduceLROnPlateau(monitor="val_loss", mode='min', min_delta=0.001, patience=8, cooldown=3, factor=0.5)
+        ReduceLROnPlateau(monitor="val_"+error_score, mode='min', min_delta=0.001, patience=8, cooldown=3, factor=0.5)
     )
     callbacks.append(
-        EarlyStopping(monitor="val_mae", mode='min', min_delta=0.0001, patience=15, restore_best_weights=True)
+        EarlyStopping(monitor="val_"+error_score, mode='min', min_delta=0.0001, patience=15, restore_best_weights=True)
     )
     callbacks.append(
-        ModelCheckpoint(filepath=filepath, monitor="val_loss", mode='min', save_best_only=True)
+        ModelCheckpoint(filepath=filepath, monitor="val_"+error_score, mode='min', save_best_only=True)
     )
 
     return callbacks
 
-def create_model(resized_dimension=(256,256), nb_channels=3):
+def get_model_dense_conv(resized_dimension, nb_channels):
 
+    # encodeur
+    inputs = Input(
+        shape=(resized_dimension[0], resized_dimension[1], nb_channels), 
+        name="input"
+    )
+    x=inputs
+
+    x = Flatten()(x)
+    x = Dense(
+        2048, 
+        activation="relu", 
+        name="enc_dense1"
+    )(x)
+    x = Dense(
+        1024, 
+        activation="relu", 
+        name="enc_dense2"
+    )(x)
+    x = Dense(
+        512, 
+        activation="relu", 
+        name="enc_dense3"
+    )(x)
+
+    x = Dense(
+        768, 
+        activation="relu", 
+    )(x)
+    x = Reshape((16,16,3))(x)
+
+    # décodeur
+    x = Conv2D(
+        64,
+        kernel_size=(3,3), 
+        padding='same', 
+        activation="relu",
+    )(x)
+    x = UpSampling2D(
+        (2,2), 
+    )(x)
+    # x = Dropout( 0.2 )(x)
+
+    x = Conv2D(
+        32,
+        kernel_size=(3,3), 
+        padding='same', 
+        activation="relu",
+    )(x)
+    x = UpSampling2D(
+        (2,2), 
+    )(x)
+    # x = Dropout( 0.2 )(x)
+
+    x = Conv2D(
+        16,
+        kernel_size=(3,3), 
+        padding='same', 
+        activation="relu",
+    )(x)
+    x = UpSampling2D(
+        (2,2), 
+    )(x)
+    
+    outputs = Conv2D(
+        nb_channels,
+        kernel_size=(3,3), 
+        padding='same', 
+        activation="sigmoid",
+    )(x)
+
+    return inputs, outputs
+
+def get_model_conv(resized_dimension, nb_channels):
     # encodeur
     inputs = Input(
         shape=(resized_dimension[0], resized_dimension[1], nb_channels), 
@@ -115,13 +188,153 @@ def create_model(resized_dimension=(256,256), nb_channels=3):
         activation="sigmoid",
     )(x)
 
+    return inputs, outputs
+
+def get_model_conv_dense(resized_dimension, nb_channels):
+    # encodeur
+    inputs = Input(
+        shape=(resized_dimension[0], resized_dimension[1], nb_channels), 
+        name="input"
+    )
+    x=inputs
+
+    x = Conv2D(
+        16,
+        kernel_size=(3,3), 
+        #strides=(2,2),
+        padding='same', 
+        activation="relu",
+    )(x)
+    x = MaxPooling2D(
+        (2,2), 
+        padding='same', 
+    )(x)
+    # x = Dropout( 0.2 )(x)
+    
+    x = Conv2D(
+        32,
+        kernel_size=(3,3), 
+        #strides=(2,2),
+        padding='same', 
+        activation="relu",
+    )(x)
+    x = MaxPooling2D(
+        (2,2), 
+        padding='same', 
+    )(x)
+    # x = Dropout( 0.2 )(x)
+    
+    x = Conv2D(
+        64,
+        kernel_size=(3,3), 
+        #strides=(2,2),
+        padding='same', 
+        activation="relu",
+    )(x)
+    x = MaxPooling2D(
+        (2,2), 
+        padding='same', 
+    )(x)
+
+    # décodeur
+    x = Flatten()(x)
+    x = Dense(
+        1024, 
+        activation="relu", 
+    )(x)
+    x = Dense(
+        (resized_dimension[0] * resized_dimension[1] * nb_channels), 
+        activation="sigmoid", 
+    )(x)
+    outputs = Reshape(
+        (resized_dimension[0], resized_dimension[1], nb_channels)
+    )(x)
+
+    return inputs, outputs
+
+def get_model_dense(resized_dimension, nb_channels):
+    # encodeur
+    inputs = Input(
+        shape=(resized_dimension[0]*resized_dimension[1]*nb_channels,), 
+        name="input"
+    )
+    x = Dense(
+        2048, 
+        activation="relu", 
+        name="enc_dense1"
+    )(inputs)
+    x = Dense(
+        1024, 
+        activation="relu", 
+        name="enc_dense2"
+    )(x)
+    x = Dense(
+        512, 
+        activation="relu", 
+        name="enc_dense3"
+    )(x)
+    latent = Dense(
+        256, 
+        activation="linear", 
+        name="bottleneck"
+    )(x)
+
+    # décodeur
+    decoder_input = Input(
+        shape=(256,), 
+        name="latent_input"
+    )
+    x = Dense(
+        512, 
+        activation="relu", 
+        name="dec_dense1"
+    )(decoder_input)
+    x = Dense(
+        1024, 
+        activation="relu", 
+        name="dec_dense2"
+    )(x)
+    x = Dense(
+        2048, 
+        activation="relu", 
+        name="dec_dense3"
+    )(x)
+    x = Dense(
+        resized_dimension[0]*resized_dimension[1]*nb_channels, 
+        activation="sigmoid", 
+    )(x)
+    outputs = Reshape(
+        (resized_dimension[0], resized_dimension[1], nb_channels)
+    )(x)
+
+    return inputs, outputs
+
+def create_model(model = "conv", loss="mse", error_score="mae", resized_dimension=(256,256), nb_channels=3):
+
+    valid_scores=['mae', 'mse']
+    if loss not in valid_scores:
+        raise ValueError(f"loss {loss} not valid. Must be in: '{'\', \''.join(valid_scores)}'")
+    if error_score not in valid_scores:
+        raise ValueError(f"error_score {error_score} not valid. Must be in: '{'\', \''.join(valid_scores)}'")
+
+    if model=="conv":
+        inputs, outputs = get_model_conv(resized_dimension, nb_channels)
+    elif model=="dense_conv":
+        inputs, outputs = get_model_dense_conv(resized_dimension, nb_channels)
+    elif model=="conv_dense":
+        inputs, outputs = get_model_conv_dense(resized_dimension, nb_channels)
+    elif model=="dense":
+        inputs, outputs = get_model_dense(resized_dimension, nb_channels)
+    else:
+        raise ValueError(f"model {model} not valid. Must be in: 'conv', 'dense_conv', 'conv_dense', 'dense'")
+
     # auto-encodeur
     autoencoder = Model(inputs = inputs, outputs = outputs, name="auto_encodeur")
 
     autoencoder.compile(
         optimizer="adam",
-        loss="mae",
-        metrics=["mse"],
+        loss=loss,
+        metrics=[error_score],
     )
     return autoencoder
 
@@ -151,31 +364,35 @@ def calculate_local_error(batch_images, pred):
 
     return score_p99
 
-def calculate_mse_labels(model, ds, mse_threshold=None):
+def calculate_errors_labels(model, ds, error_score="mae", errors_threshold=None):
 
-    mses = []
+    errors = []
     true_labels = []
     pred_labels = []
     for batch_images, batch_labels in ds:
         pred = model(batch_images, training=False)
         
         # Calcul MSE
-        batch_mses = tf.reduce_mean(tf.square(batch_images - pred), axis=(1,2,3))
+        if error_score=="mse":
+            batch_errors = tf.reduce_mean(tf.square(batch_images - pred), axis=(1,2,3))
 
         # Calcul MAE
-        # batch_mses = tf.reduce_mean(tf.abs(batch_images - pred), axis=(1,2,3))
+        elif error_score=="mae":
+            batch_errors = tf.reduce_mean(tf.abs(batch_images - pred), axis=(1,2,3))
         
+        else:
+            raise ValueError(f"error_score {error_score} not valid. Must be in: 'mse', 'mae'")
         # Calcul erreur locale
         # batch_mses = calculate_local_error(batch_images, pred)
 
-        mses.extend(batch_mses.numpy())
+        errors.extend(batch_errors.numpy())
         
-        if mse_threshold is not None:
-            pred_labels.extend( (batch_mses > mse_threshold).numpy().astype(int) )
+        if errors_threshold is not None:
+            pred_labels.extend( (batch_errors > errors_threshold).numpy().astype(int) )
 
         true_labels.extend(batch_labels.numpy())
 
-    if mse_threshold is None:
-        return mses, true_labels
+    if errors_threshold is None:
+        return errors, true_labels
     else:
-        return mses, true_labels, pred_labels
+        return errors, true_labels, pred_labels

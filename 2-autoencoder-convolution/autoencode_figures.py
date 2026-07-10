@@ -6,7 +6,19 @@ from sklearn.metrics import confusion_matrix, classification_report
 from sklearn.metrics import roc_curve, auc
 import tensorflow as tf
 
+from functools import wraps
+
+def logging_function(function):
+    @wraps(function)
+    def printing(*args, **kwargs):
+        # print(f"{function.__name__} starting")
+        result = function(*args, **kwargs)
+        print(f"{function.__name__} finished")
+        return result
+    return printing
+
 # Visualisation des images reconstruites
+@logging_function
 def compare_orig_encoded(image_dataset, model, output_path, output_filename="images_reconstruites_train_good.png", only_label=None):
     """ Affiche les 6 premières images originales, leur version auto-encodées et leurs différences.
     """
@@ -68,6 +80,7 @@ def compare_orig_encoded(image_dataset, model, output_path, output_filename="ima
     plt.savefig(output_path / output_filename)
 
 # Histogramme des erreurs sur les images d'entraînement (bonnes)
+@logging_function
 def histogramme_erreurs(train_mses, 
                         test_mses, test_labels, 
                         threshold, 
@@ -91,7 +104,7 @@ def histogramme_erreurs(train_mses,
     plt.xlim(
         min(*train_mses, *test_mses), max(*train_mses, *test_mses)
     )
-    plt.xlabel('Erreur MSE')
+    plt.xlabel('Erreur')
     plt.ylabel('Fréquence')
     plt.title(f'Histogramme des erreurs - {category}')
 
@@ -102,6 +115,7 @@ def histogramme_erreurs(train_mses,
     plt.legend()
     plt.savefig(output_path / output_filename)
 
+@logging_function
 def draw_confusion_matrix(y_true, y_pred, output_path, output_filename="matrice_confusion.png", category=""):
     plt.figure(figsize=(8,6))
     cm = confusion_matrix(y_true, y_pred)
@@ -111,12 +125,14 @@ def draw_confusion_matrix(y_true, y_pred, output_path, output_filename="matrice_
     plt.title(f'Matrice de confusion - {category}')
     plt.savefig(output_path / output_filename)
 
+@logging_function
 def save_classification_report(y_true, y_pred, output_path, output_filename="classification_report.txt", comment="", append=False):
     with open(output_path / output_filename, "a" if append else "w") as f:
         f.write(f"--- Classification report - {comment} ---\n")
-        f.write(classification_report(y_true, y_pred))
+        f.write(classification_report(y_true, y_pred, zero_division=0,))
         f.write("\n\n")
 
+@logging_function
 def draw_roc_curve(mses, labels, output_path, output_filename="roc_curve.png", category=""):
 
     fpr, tpr, thresholds = roc_curve(labels, mses)

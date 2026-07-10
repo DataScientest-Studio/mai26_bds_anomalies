@@ -10,7 +10,7 @@ import tensorflow as tf
 
 from keras.utils import image_dataset_from_directory
 
-from autoencoder_model import create_model, save_history_plot, get_callbacks, load_autoencoder, calculate_mse_labels
+from autoencoder_model import create_model, save_history_plot, get_callbacks, load_autoencoder, calculate_errors_labels
 from autoencode_data_augment import DataAugmentation
 
 from dotenv import load_dotenv
@@ -57,29 +57,56 @@ def detect_nb_couleurs(ds):
         return images[0].shape[-1]
     
 def augment_autoencoder(data_augmenter, x):
-    x_modified = data_augmenter.normalize(x) # pas d'augmentation
+    x_modified = data_augmenter.augment(x)
     return (x_modified, x_modified)
 
 ### SCRIPT PRINCIPAL ###
-resized_dimension = (256,256)
-batch_size = 8
 
 # Si le répertoire output n'existe pas, on le crée
 if not os.path.exists(output_path):
     os.makedirs(output_path)
 
-# encodeur
+
+##########################################
+####          SETTINGS                ####
+##########################################
+
 #categories = ['bottle', 'cable', 'capsule', 'carpet', 'grid',
 #    'hazelnut', 'leather', 'metal_nut', 'pill', 'screw',
 #    'tile', 'toothbrush', 'transistor', 'wood', 'zipper',
 #    'metal_plate']
-categories = ['capsule']
+categories = ['bottle', 'transistor']
 
-data_augmenter = DataAugmentation()
+resized_dimension = (64,64)
+batch_size = 32
+
+color_augmentation=False
+move_augmentation=False
+
+model_type = 'conv_dense' # 'conv', 'dense_conv', 'conv_dense', 'dense'
+loss = 'mae' # 'mae', 'mse'
+error_score = 'mse' # 'mae', 'mse'
+
+threshold_percentile = 80
+
+##########################################
+
+data_augmenter = DataAugmentation(colors=False, moves=False)
 
 for category in categories:
 
-    model_file = output_path / f"autoencoder_{category}.keras"
+    # Save model parameters
+    with open(output_path / f"{category}_parameters.txt", "w") as f:
+        f.write(f"--- Paramètres utilisés - catégorie {category} ---\n")
+        f.write(f" resized_dimension = {str(resized_dimension)}\n")
+        f.write(f"        batch_size = {str(batch_size)}\n")
+        f.write(f"color_augmentation = {str(color_augmentation)}\n")
+        f.write(f" move_augmentation = {str(move_augmentation)}\n")
+        f.write(f"        model_type = {str(model_type)}\n")
+        f.write(f"              loss = {str(loss)}\n")
+        f.write(f"       error_score = {str(error_score)}\n")
+
+    model_file = output_path / f"{category}_autoencoder.keras"
 
     train_ds = image_dataset_from_directory(
         image_path / category / 'train', batch_size=batch_size, 
@@ -101,7 +128,8 @@ for category in categories:
     if train_cat:
 
         nb_channels = detect_nb_couleurs(train_ds)
-        autoencoder = create_model(resized_dimension, nb_channels)
+        autoencoder = create_model(model=model_type, loss=loss, error_score=error_score, 
+                                   resized_dimension= resized_dimension, nb_channels= nb_channels)
 
         autoencoder.summary()
 
@@ -109,22 +137,12 @@ for category in categories:
             train_ds, validation_data=val_ds, 
             epochs=100, 
             verbose=1, shuffle=False, 
-            callbacks=get_callbacks(model_file), 
+            callbacks=get_callbacks(model_file, error_score=error_score), 
         )
 
-        # Sauvegarde du modèle
-        #joblib.dump(autoencoder, output_path / f"autoencoder_{category}.joblib")
-        #joblib.dump(encoder, output_path / "encoder.joblib")
-        #joblib.dump(decoder, output_path / "decoder.joblib")
+        save_history_plot(history, output_path / f"{category}_history_plot.png")
 
-        save_history_plot(history, output_path / f"history_plot_{category}.png")
-
-    else:
-        autoencoder = load_autoencoder(model_file)
-
-        #autoencoder = joblib.load(output_path / f"autoencoder_{category}.joblib")
-        #encoder = joblib.load(output_path / "encoder.joblib")
-        #decoder = joblib.load(output_path / "decoder.joblib")
+    autoencoder = load_autoencoder(model_file)
 
     #########################
     # Chargement des images #
@@ -155,60 +173,61 @@ for category in categories:
     ).prefetch(AUTOTUNE)
 
     # Calcul des MSEs sur le train et du threshold
-    train_mses, _ = calculate_mse_labels(autoencoder, trainf_ds)
-    threshold_mse = np.percentile(train_mses, 95)
-    print("95ème percentile train =", threshold_mse)
+    train_errors, _ = calculate_errors_labels(autoencoder, trainf_ds, error_score=error_score)
+    error_threshold = np.percentile(train_errors, threshold_percentile)
+    print(f"{threshold_percentile}ème percentile train =", error_threshold)
 
-    val_mses, _ = calculate_mse_labels(autoencoder, val_ds)
-    threshold_mse = np.percentile(val_mses, 95)
-    print("Threshold MSE (val) =", threshold_mse)
+    val_errors, _ = calculate_errors_labels(autoencoder, val_ds, error_score=error_score)
+    error_threshold = np.percentile(val_errors, threshold_percentile)
+    print("Threshold Error (val) =", error_threshold)
 
     # Calcul des MSEs sur le test (avec le label 0 si good, 1 si anomalie)
-    test_mses, y_true, y_pred = calculate_mse_labels(autoencoder, test_ds, threshold_mse)
+    test_errors, y_true, y_pred = calculate_errors_labels(autoencoder, test_ds, error_score=error_score, errors_threshold=error_threshold)
 
     ##################
     # Visualisations #
     ##################
 
     # Visualisation des images originales reconstruites
-    fig.compare_orig_encoded(trainf_ds, autoencoder, output_path, f"images_reconstruites_train_good_{category}.png")
+    fig.compare_orig_encoded(trainf_ds, autoencoder, output_path, f"{category}_images_reconstruites_train_good.png")
 
     # Visualisation des images augmentées reconstruites
-    fig.compare_orig_encoded(train_ds, autoencoder, output_path, f"images_reconstruites_train_augmented_{category}.png")
+    if color_augmentation or move_augmentation:
+        fig.compare_orig_encoded(train_ds, autoencoder, output_path, f"{category}_images_reconstruites_train_augmented.png")
 
     # Histogramme des erreurs sur les images d'entraînement (bonnes)
 
     fig.histogramme_erreurs(
-        train_mses, 
-        test_mses, y_true, 
-        threshold_mse, 
+        train_errors, 
+        test_errors, y_true, 
+        error_threshold, 
         output_path, 
-        f"histogramme_erreurs_{category}.png", 
+        f"{category}_histogramme_erreurs.png", 
         category
     )
 
     # matrice de confusion
-    fig.draw_confusion_matrix(y_true, y_pred, output_path, f"matrice_confusion_{category}.png", category)
+    fig.draw_confusion_matrix(y_true, y_pred, output_path, f"{category}_matrice_confusion.png", category)
 
     # classification_report
-    comment = f"{category.upper()} - seuil 95% ({threshold_mse :.10f})"
-    fig.save_classification_report(y_true, y_pred, output_path, f"classification_report_{category}.txt", comment)
+    comment = f"{category.upper()} - seuil {threshold_percentile}% ({error_threshold :.10f})"
+    fig.save_classification_report(y_true, y_pred, output_path, f"{category}_classification_report.txt", comment)
 
-    for p in [97, 98, 99, 99.5]:
-        threshold_mse_new = np.percentile(val_mses, p)
+    for p in [85, 90, 95, 99]:
+        threshold_mse_new = np.percentile(val_errors, p)
 
         # Calcul des MSEs sur le test (avec le label 0 si good, 1 si anomalie)
-        y_pred_new = (test_mses > threshold_mse_new).astype(int)
+        y_pred_new = (test_errors > threshold_mse_new).astype(int)
         
         comment = f"{category.upper()} - seuil {p}% ({threshold_mse_new :.10f})"
-        fig.save_classification_report(y_true, y_pred_new, output_path, f"classification_report_{category}.txt", comment, append=True)
+        fig.save_classification_report(y_true, y_pred_new, output_path, f"{category}_classification_report.txt", comment, append=True)
 
     # ROC curve
-    fig.draw_roc_curve(test_mses, 
+    fig.draw_roc_curve(test_errors, 
                     y_true, 
                     output_path, 
-                    output_filename=f"roc_curve_{category}.png", 
+                    output_filename=f"{category}_roc_curve.png", 
                     category=category)
 
     # Visualisation des images reconstruites pour les anomalies
-    fig.compare_orig_encoded(test_ds, autoencoder, output_path, f"images_reconstruites_test_anomalies_{category}.png", only_label=1)
+    fig.compare_orig_encoded(test_ds, autoencoder, output_path, f"{category}_images_reconstruites_test_anomalies.png", only_label=1)
