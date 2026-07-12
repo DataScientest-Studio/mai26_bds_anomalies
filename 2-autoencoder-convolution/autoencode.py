@@ -74,21 +74,19 @@ if not os.path.exists(output_path):
 
 #categories = ['bottle', 'cable', 'capsule', 'carpet', 'grid',
 #    'hazelnut', 'leather', 'metal_nut', 'pill', 'screw',
-#    'tile', 'toothbrush', 'transistor', 'wood', 'zipper',
-#    'metal_plate']
-categories = ['cable', 'capsule', 'carpet', 'grid',
-   'hazelnut', 'leather', 'metal_nut', 'pill', 'screw',
-   'tile', 'toothbrush', 'wood', 'zipper']
+#    'tile', 'toothbrush', 'transistor', 'wood', 'zipper']
+categories = ['leather', 'metal_nut', 'pill', 'screw',
+   'tile', 'toothbrush', 'transistor', 'wood', 'zipper']
 
 resized_dimension = (128,128)
-batch_size = 16
+batch_size = 8
 
-color_augmentation=True
-move_augmentation=True
+color_augmentation=False
+move_augmentation=False
 
-model_type = 'convtl' # 'conv', 'dense_conv', 'conv_dense', 'dense'
-loss = 'mae' # 'mae', 'mse'
-error_score = 'mse' # 'mae', 'mse'
+model_type = 'convtl_dense' # 'conv', 'dense_conv', 'conv_dense', 'dense', 'convtl', 'convtl_dense'
+loss = 'mse' # 'mae', 'mse'
+error_score = 'mae' # 'mae', 'mse'
 
 threshold_percentile = 80
 

@@ -259,14 +259,15 @@ def get_model_conv_dense(resized_dimension, nb_channels):
 def get_model_dense(resized_dimension, nb_channels):
     # encodeur
     inputs = Input(
-        shape=(resized_dimension[0]*resized_dimension[1]*nb_channels,), 
+        shape=(*resized_dimension,nb_channels,), 
         name="input"
     )
+    x = Flatten()(inputs)
     x = Dense(
         2048, 
         activation="relu", 
         name="enc_dense1"
-    )(inputs)
+    )(x)
     x = Dense(
         1024, 
         activation="relu", 
@@ -284,15 +285,11 @@ def get_model_dense(resized_dimension, nb_channels):
     )(x)
 
     # décodeur
-    decoder_input = Input(
-        shape=(256,), 
-        name="latent_input"
-    )
     x = Dense(
         512, 
         activation="relu", 
         name="dec_dense1"
-    )(decoder_input)
+    )(latent)
     x = Dense(
         1024, 
         activation="relu", 
@@ -406,6 +403,43 @@ def get_model_convtl(resized_dimension, nb_channels):
 
     return inputs, outputs
 
+def get_model_convtl_dense(resized_dimension, nb_channels): 
+    """Encodeur convolutionnel avec transfer learning et décodeur dense"""
+
+    # encodeur
+    inputs = Input(
+        shape=(*resized_dimension, nb_channels), 
+        name="input"
+    )
+
+    encoder_inputs = Rescaling(255.)(inputs)
+
+    encoder = EfficientNetB0(
+        include_top=False,
+        weights="imagenet",
+        input_shape=(*resized_dimension, nb_channels),
+    )
+    # encodeur entièrement gelé.
+    encoder.trainable = False
+
+    x = encoder(encoder_inputs, training=False)
+
+    # décodeur
+    x = Flatten()(x)
+    x = Dense(
+        1024, 
+        activation="relu", 
+    )(x)
+    x = Dense(
+        (resized_dimension[0] * resized_dimension[1] * nb_channels), 
+        activation="sigmoid", 
+    )(x)
+    outputs = Reshape(
+        (resized_dimension[0], resized_dimension[1], nb_channels)
+    )(x)
+
+    return inputs, outputs
+
 def create_model(model = "conv", loss="mse", error_score="mae", resized_dimension=(256,256), nb_channels=3):
 
     valid_scores=['mae', 'mse']
@@ -424,8 +458,10 @@ def create_model(model = "conv", loss="mse", error_score="mae", resized_dimensio
         inputs, outputs = get_model_dense(resized_dimension, nb_channels)
     elif model=="convtl":
         inputs, outputs = get_model_convtl(resized_dimension, nb_channels)
+    elif model=="convtl_dense":
+        inputs, outputs = get_model_convtl_dense(resized_dimension, nb_channels)
     else:
-        raise ValueError(f"model {model} not valid. Must be in: 'conv', 'dense_conv', 'conv_dense', 'dense', 'convtl'")
+        raise ValueError(f"model {model} not valid. Must be in: 'conv', 'dense_conv', 'conv_dense', 'dense', 'convtl', 'convtl_dense")
 
     # auto-encodeur
     autoencoder = Model(inputs = inputs, outputs = outputs, name="auto_encodeur")
