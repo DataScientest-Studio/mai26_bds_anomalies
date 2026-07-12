@@ -1,9 +1,19 @@
 import numpy as np
 import matplotlib.pyplot as plt
 #import seaborn as sns
-import joblib
 import os
 from datetime import datetime
+
+# Allocateur GPU par défaut de TF (BFC) : il ne rend jamais la mémoire libérée
+# au driver CUDA, il la garde dans son propre pool interne. Sur un GPU de
+# quelques Go, entraîner plusieurs gros modèles (EfficientNetB0 + décodeur
+# dense) à la suite dans le même processus finit par fragmenter ce pool au
+# point de faire échouer une allocation pourtant plus petite que la mémoire
+# totale libre. cuda_malloc_async rend réellement la mémoire au driver.
+# Doit être fixé avant tout import qui charge TensorFlow (y compris via
+# autoencode_figures).
+import gc
+os.environ.setdefault("TF_GPU_ALLOCATOR", "cuda_malloc_async")
 
 import autoencode_figures as fig
 
@@ -75,8 +85,7 @@ if not os.path.exists(output_path):
 #categories = ['bottle', 'cable', 'capsule', 'carpet', 'grid',
 #    'hazelnut', 'leather', 'metal_nut', 'pill', 'screw',
 #    'tile', 'toothbrush', 'transistor', 'wood', 'zipper']
-categories = ['leather', 'metal_nut', 'pill', 'screw',
-   'tile', 'toothbrush', 'transistor', 'wood', 'zipper']
+categories = ['transistor', 'wood', 'zipper']
 
 resized_dimension = (128,128)
 batch_size = 8
@@ -137,7 +146,22 @@ def save_train_result(category, roc_auc, tpr, fpr):
 
 data_augmenter = DataAugmentation(colors=False, moves=False)
 
+autoencoder = train_ds = val_ds = trainf_ds = test_ds = history = None
+
 for category in categories:
+
+    # Repart d'un état propre à chaque catégorie. clear_session() seul ne suffit
+    # pas : tant que autoencoder/train_ds/... de la catégorie précédente restent
+    # liés à leur nom de variable, leurs tenseurs (poids d'EfficientNetB0 compris)
+    # restent alloués côté GPU. Il faut d'abord couper ces références (del), puis
+    # forcer le garbage collector (les modèles Keras ont des cycles de référence
+    # internes que le simple refcounting ne libère pas), puis réinitialiser le
+    # graphe/session Keras. Sans ça, la mémoire GPU s'accumule et le script plante
+    # invariablement à la 3e catégorie traitée.
+    del autoencoder, train_ds, val_ds, trainf_ds, test_ds, history
+    gc.collect()
+    tf.keras.backend.clear_session()
+    gc.collect()
 
     # Save model parameters
     with open(output_path / f"{category}_parameters.txt", "w") as f:
