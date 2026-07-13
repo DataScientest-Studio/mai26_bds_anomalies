@@ -5,8 +5,10 @@ import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Input, RandomRotation, RandomZoom, RandomContrast, RandomBrightness, RandomTranslation
 
+from preprocessing_screw import preprocess_screw_batch
+
 class DataAugmentation(Sequential):
-    def __init__(self, colors=True, moves=True):
+    def __init__(self, colors=True, moves=True, screw=False):
         
         self.transform=False
         s=[]
@@ -29,13 +31,20 @@ class DataAugmentation(Sequential):
             s.extend(moves_sequence)
             self.transform=True
 
+        self.screw=screw
         super().__init__(s)
 
     def normalize(self, images):
+        if self.screw:
+            images = preprocess_screw_batch(images)
+
         images = tf.cast(images, tf.float32) / 255.0
         return images
     
     def augment(self, images):
+        if self.screw:
+            images = preprocess_screw_batch(images)
+            
         if self.transform:
             images = tf.cast(images, tf.float32) / 255.0
             return self(images)

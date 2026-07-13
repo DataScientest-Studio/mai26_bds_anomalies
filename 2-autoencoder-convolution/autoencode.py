@@ -86,13 +86,13 @@ if not os.path.exists(output_path):
 #    'hazelnut', 'leather', 'metal_nut', 'pill', 'screw',
 #    'tile', 'toothbrush', 'transistor', 'wood', 'zipper', 
 #    'metal_plate']
-categories = ['metal_plate']
+categories = ['screw']
 
 resized_dimension = (128,128)
 batch_size = 8
 
-color_augmentation=True
-move_augmentation=True
+color_augmentation=False
+move_augmentation=False
 
 model_type = 'convtl_dense' # 'conv', 'dense_conv', 'conv_dense', 'dense', 'convtl', 'convtl_dense'
 retrain_layers = 6 # en cas de transfer learning, indique le type et la profondeur du fine-tuning :
@@ -150,8 +150,6 @@ def save_train_result(category, roc_auc, tpr, fpr):
         f.write(line+"\n")
 
 
-data_augmenter = DataAugmentation(colors=False, moves=False)
-
 autoencoder = train_ds = val_ds = trainf_ds = test_ds = history = None
 
 for category in categories:
@@ -168,6 +166,8 @@ for category in categories:
     gc.collect()
     tf.keras.backend.clear_session()
     gc.collect()
+
+    data_augmenter = DataAugmentation(colors=color_augmentation, moves=move_augmentation, screw=(category=="screw"))
 
     # Save model parameters
     with open(output_path / f"{category}_parameters.txt", "w") as f:
