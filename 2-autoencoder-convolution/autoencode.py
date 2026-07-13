@@ -84,18 +84,23 @@ if not os.path.exists(output_path):
 
 #categories = ['bottle', 'cable', 'capsule', 'carpet', 'grid',
 #    'hazelnut', 'leather', 'metal_nut', 'pill', 'screw',
-#    'tile', 'toothbrush', 'transistor', 'wood', 'zipper']
-categories = ['transistor', 'wood', 'zipper']
+#    'tile', 'toothbrush', 'transistor', 'wood', 'zipper', 
+#    'metal_plate']
+categories = ['metal_plate']
 
 resized_dimension = (128,128)
 batch_size = 8
 
-color_augmentation=False
-move_augmentation=False
+color_augmentation=True
+move_augmentation=True
 
 model_type = 'convtl_dense' # 'conv', 'dense_conv', 'conv_dense', 'dense', 'convtl', 'convtl_dense'
-loss = 'mse' # 'mae', 'mse'
-error_score = 'mae' # 'mae', 'mse'
+retrain_layers = 6 # en cas de transfer learning, indique le type et la profondeur du fine-tuning :
+# 0 : feature extraction uniquement, on ne ré-entraine pas le modèle
+# 1 à n : fine-tuning partiel, on fine-tune les n dernières couches du modèle
+# -1 : fine-tuning total
+loss = 'mae' # 'mae', 'mse'
+error_score = 'mse' # 'mae', 'mse'
 
 threshold_percentile = 80
 
@@ -107,6 +112,7 @@ parameters = dict(
     color_augmentation = color_augmentation, 
     move_augmentation = move_augmentation, 
     model_type = model_type, 
+    retrain_layers = retrain_layers, 
     loss = loss, 
     error_score = error_score, 
 )
@@ -128,7 +134,7 @@ def save_train_result(category, roc_auc, tpr, fpr):
     )
 
     # check if csv file exists
-    result_file = output_path / "train_results.csv"
+    result_file = output_path / "0_train_results.csv"
     if not (result_file).is_file():
         with open(result_file, "w") as f:
             header = "date,category"
@@ -136,7 +142,7 @@ def save_train_result(category, roc_auc, tpr, fpr):
             header += "," + ",".join(results.keys())
             f.write(header + "\n")
 
-    with open(output_path / "train_results.csv", "a") as f:
+    with open(result_file, "a") as f:
         line = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
         line += "," + category
         line += "," + ",".join(map(lambda p: '"'+ str(p) + '"', parameters.values()))
@@ -190,7 +196,7 @@ for category in categories:
 
         nb_channels = detect_nb_couleurs(train_ds)
         autoencoder = create_model(model=model_type, loss=loss, error_score=error_score, 
-                                   resized_dimension= resized_dimension, nb_channels= nb_channels)
+                                   resized_dimension= resized_dimension, nb_channels= nb_channels, retrain_layers=retrain_layers)
 
         autoencoder.summary()
 

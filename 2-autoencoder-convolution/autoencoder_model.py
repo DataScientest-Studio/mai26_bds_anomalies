@@ -310,7 +310,18 @@ def get_model_dense(resized_dimension, nb_channels):
 
     return inputs, outputs
 
-def get_model_convtl(resized_dimension, nb_channels): 
+def adjust_trainable(base_model, retrain_layers):
+    if retrain_layers==0:
+        base_model.trainable = False
+    elif retrain_layers<0:
+        base_model.trainable = True
+    else:
+        base_model.trainable = False
+        for layer in base_model.layers[-retrain_layers:]:
+            layer.trainable=True
+    return base_model
+
+def get_model_convtl(resized_dimension, nb_channels, retrain_layers=0): 
     """Encodeur convolutionnel avec transfer learning et décodeur convolutionnel"""
 
     # encodeur
@@ -326,8 +337,7 @@ def get_model_convtl(resized_dimension, nb_channels):
         weights="imagenet",
         input_shape=(*resized_dimension, nb_channels),
     )
-    # encodeur entièrement gelé.
-    encoder.trainable = False
+    encoder = adjust_trainable(encoder, retrain_layers)
 
     x = encoder(encoder_inputs, training=False)
 
@@ -403,7 +413,7 @@ def get_model_convtl(resized_dimension, nb_channels):
 
     return inputs, outputs
 
-def get_model_convtl_dense(resized_dimension, nb_channels): 
+def get_model_convtl_dense(resized_dimension, nb_channels, retrain_layers=0): 
     """Encodeur convolutionnel avec transfer learning et décodeur dense"""
 
     # encodeur
@@ -419,8 +429,7 @@ def get_model_convtl_dense(resized_dimension, nb_channels):
         weights="imagenet",
         input_shape=(*resized_dimension, nb_channels),
     )
-    # encodeur entièrement gelé.
-    encoder.trainable = False
+    encoder = adjust_trainable(encoder, retrain_layers)
 
     x = encoder(encoder_inputs, training=False)
 
@@ -440,7 +449,7 @@ def get_model_convtl_dense(resized_dimension, nb_channels):
 
     return inputs, outputs
 
-def create_model(model = "conv", loss="mse", error_score="mae", resized_dimension=(256,256), nb_channels=3):
+def create_model(model = "conv", loss="mse", error_score="mae", resized_dimension=(256,256), nb_channels=3, retrain_layers=0):
 
     valid_scores=['mae', 'mse']
     if loss not in valid_scores:
@@ -457,9 +466,9 @@ def create_model(model = "conv", loss="mse", error_score="mae", resized_dimensio
     elif model=="dense":
         inputs, outputs = get_model_dense(resized_dimension, nb_channels)
     elif model=="convtl":
-        inputs, outputs = get_model_convtl(resized_dimension, nb_channels)
+        inputs, outputs = get_model_convtl(resized_dimension, nb_channels, retrain_layers)
     elif model=="convtl_dense":
-        inputs, outputs = get_model_convtl_dense(resized_dimension, nb_channels)
+        inputs, outputs = get_model_convtl_dense(resized_dimension, nb_channels, retrain_layers)
     else:
         raise ValueError(f"model {model} not valid. Must be in: 'conv', 'dense_conv', 'conv_dense', 'dense', 'convtl', 'convtl_dense")
 
