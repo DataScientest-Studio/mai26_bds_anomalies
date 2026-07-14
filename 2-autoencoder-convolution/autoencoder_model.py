@@ -21,10 +21,22 @@ def get_callbacks(filepath, error_score="mae"):
     callbacks=[]
 
     callbacks.append(
-        ReduceLROnPlateau(monitor="val_"+error_score, mode='min', min_delta=0.001, patience=8, cooldown=3, factor=0.5)
+        ReduceLROnPlateau(
+            monitor="val_"+error_score, 
+            mode='min', 
+            min_delta=0.0001, 
+            patience=5, 
+            min_lr=1e-6, 
+            cooldown=3, 
+            factor=0.5)
     )
     callbacks.append(
-        EarlyStopping(monitor="val_"+error_score, mode='min', min_delta=0.0001, patience=15, restore_best_weights=True)
+        EarlyStopping(
+            monitor="val_"+error_score, 
+            mode='min', 
+            min_delta=0.0001, 
+            patience=15, 
+            restore_best_weights=True)
     )
     callbacks.append(
         ModelCheckpoint(filepath=filepath, monitor="val_"+error_score, mode='min', save_best_only=True)

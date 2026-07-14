@@ -52,10 +52,10 @@ if not os.path.exists(output_path):
 
 # encodeur
 #categories = ['bottle', 'cable', 'capsule', 'carpet', 'grid',
-#    'hazelnut', 'leather', 'metal_nut', 'pill', 'screw',
+#    'hazelnut', 'leather', 'metal_nut', 'pill', 'screw_preprocessed',
 #    'tile', 'toothbrush', 'transistor', 'wood', 'zipper',
 #    'metal_plate']
-categories = ['bottle', 'cable']
+categories = ['screw_preprocessed']
 
 for category in categories:
 
