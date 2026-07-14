@@ -1,9 +1,15 @@
 import cv2
 from pathlib import Path
+from dotenv import load_dotenv
+from os import getenv
 import matplotlib.pyplot as plt
 import numpy as np
 
 import tensorflow as tf
+
+load_dotenv()
+root_path = Path(getenv("PATH_DATASET")) / "screw"
+new_path = Path(getenv("PATH_DATASET")) / "screw_preprocessed"
 
 def get_screw_contour(image):
     # Je crée un masque en noir et blanc
@@ -22,17 +28,17 @@ def get_screw_contour(image):
 
     return contour
 
-def align_horizontally(image):
+def align_horizontally(image, mask=None):
     contour = get_screw_contour(image)
 
     [vx, vy, x0, y0] = cv2.fitLine(contour, cv2.DIST_L2,0,0.01,0.01)
     angle = np.degrees(np.arctan2(vy, vx))[0]
 
-    image= rotate_image(image,angle)
+    image, mask= rotate_image(image,angle, mask)
 
-    return image
+    return image, mask
 
-def rotate_image(image, angle):
+def rotate_image(image, angle, mask=None):
     center=(image.shape[1]//2, image.shape[0]//2)
     R = cv2.getRotationMatrix2D(center, angle, scale=1)
 
@@ -52,9 +58,16 @@ def rotate_image(image, angle):
         borderMode=cv2.BORDER_REPLICATE,
     )
     #print("Rotation :", angle)
-    return image
+    if mask is not None:
+        mask = cv2.warpAffine(
+            mask, R, #(image.shape[1], image.shape[0]),
+            (new_width, new_height),
+            borderMode=cv2.BORDER_REPLICATE,
+        )
+    
+    return image, mask
 
-def center_crop_screw(image, dimension_shape):
+def center_crop_screw(image, dimension_shape, mask=None):
     contour = get_screw_contour(image)
 
     [x,y,wr,hr] = cv2.boundingRect(contour)
@@ -77,7 +90,16 @@ def center_crop_screw(image, dimension_shape):
 
     image = image[:h, :w]
 
-    return image
+    if mask is not None:
+        mask = cv2.warpAffine(
+            mask, 
+            matrix,
+            (image.shape[1], image.shape[0]),
+            borderMode=cv2.BORDER_REFLECT,
+        )
+        mask = mask[:h, :w]
+
+    return image, mask
 
 def measure_max_height(image):
     contour = get_screw_contour(image)
@@ -99,19 +121,22 @@ def detect_head_side(image):
     else:
         return 1 # right
 
-def preprocess_screw(image):
+def preprocess_screw(image, mask=None):
     image = image.astype(np.uint8)
     initial_shape = image.shape
 
-    image = align_horizontally(image)
+    image, mask = align_horizontally(image, mask)
 
     side = detect_head_side(image)
     if side > 0:
-        image=rotate_image(image, 180)
+        image, mask=rotate_image(image, 180, mask)
 
-    image = center_crop_screw(image, initial_shape)
+    image, mask = center_crop_screw(image, initial_shape, mask)
     
-    return image
+    if mask is None:
+        return image
+    else:
+        return image, mask
 
 def preprocess_screw_tf(image):
     processed_image = tf.numpy_function(
@@ -134,6 +159,7 @@ def preprocess_screw_batch(image_batch):
 
 
 def __main__():
+    """
     image_number=np.random.randint(0,319)
     image_number = 114
     print(f"{image_number:03d}.png")
@@ -155,3 +181,63 @@ def __main__():
 
     plt.axis('off')
     plt.show();
+    """
+
+    # images "good"
+    image_paths=[
+        {
+            'image_path': Path(root_path / "train" / "good"), 
+            'new_image_path': Path(new_path / "train" / "good"), 
+            'mask_path': None, 
+            'new_mask_path': None, 
+        },
+        {
+            'image_path': Path(root_path / "test" / "good"), 
+            'new_image_path': Path(new_path / "test" / "good"), 
+            'mask_path': None, 
+            'new_mask_path': None, 
+        },
+    ]
+    image_paths[0]['new_image_path'].mkdir(parents=True, exist_ok=True)
+    image_paths[1]['new_image_path'].mkdir(parents=True, exist_ok=True)
+
+    # recherche de toutes les catégories d'anomalies (avec masque dans ground_truth)
+    test_path = Path(root_path / "test")
+    for d in test_path.iterdir():
+        if d.is_dir() and d.name!="good":
+            anomaly_dir = {
+                'image_path': d, 
+                'new_image_path': Path(new_path / "test" / d.name), 
+                'mask_path': Path(root_path / "ground_truth" / d.name), 
+                'new_mask_path': Path(new_path / "ground_truth" / d.name), 
+            }
+            anomaly_dir['new_image_path'].mkdir(parents=True, exist_ok=True)
+            anomaly_dir['new_mask_path'].mkdir(parents=True, exist_ok=True)
+
+            image_paths.append(anomaly_dir)
+
+    for dir in image_paths:
+        for f in dir["image_path"].iterdir():
+            has_mask = (dir["mask_path"]!=None)
+            if f.is_file() and f.suffix in ['.png', '.jpg', '.jpeg']:
+                image = cv2.imread(f)
+
+                mask=None
+                if has_mask:
+                    print(f"Processing { f.parent.parent.name }/{ f.parent.name }/{f.name} (file and mask)")
+                    mask_file_name = f.stem + "_mask.png"
+                    mask = cv2.imread(dir["mask_path"] / mask_file_name)
+
+                    image_modified, mask_modified = preprocess_screw(image, mask)
+
+                    cv2.imwrite(dir["new_image_path"] / f.name, image_modified)
+                    cv2.imwrite(dir["new_mask_path"] / mask_file_name, mask_modified)
+                    print(f"Saved { f.parent.parent.name }/{ f.parent.name }/{f.name} (file and mask)")
+                else:
+                    print(f"Processing { f.parent.parent.name }/{ f.parent.name }/{f.name} (file only)")
+                    image_modified = preprocess_screw(image)
+
+                    cv2.imwrite(dir["new_image_path"] / f.name, image_modified)
+                    print(f"Saved { f.parent.parent.name }/{ f.parent.name }/{f.name} (file only)")
+
+#__main__()
