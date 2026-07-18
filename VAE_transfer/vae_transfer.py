@@ -3,6 +3,9 @@ import matplotlib.pyplot as plt
 #import seaborn as sns
 import joblib
 import os
+import csv
+from datetime import datetime
+from sklearn.metrics import roc_auc_score, confusion_matrix
 
 import vae_transfer_figures as fig
 
@@ -41,12 +44,21 @@ if len(sys.argv) > 2:
     sys.exit(1)
 
 resized_dimension = (64,64)
+batch_size = 32
+model_type = "VAE_transfer"
 
 if not os.path.exists(output_path):
     os.makedirs(output_path)
 
+# chemin du fichier CSV qui va accumuler les résultats de toutes les catégories/exécutions
+results_csv_path = output_path.parent / "resultats.csv"
+csv_columns = [
+    "date", "category", "resized_dimension", "batch_size", 
+    "color_augmentation", "move_augmentation", "model_type", 
+    "retrain_layers", "loss", "error_score", "roc_auc", "tpr", "fpr"
+]
 
-categories = ['bolt']
+categories = ['bolt', 'ribbon', 'sponge', 'tape']
 
 for category in categories:
 
@@ -65,7 +77,7 @@ for category in categories:
 
         history = autoencoder.fit(
             images_3d, images_3d, 
-            batch_size=32, 
+            batch_size=batch_size, 
             epochs=30, 
             shuffle=True,
             validation_split=0.1,  
@@ -77,8 +89,11 @@ for category in categories:
 
         save_history_plot(history, output_path / f"history_plot_{category}.png")
 
+        final_loss = history.history["loss"][-1]
+
     else:
         autoencoder = joblib.load(output_path / f"autoencoder_{category}.joblib")
+        final_loss = None  # pas d'entraînement effectué, pas de loss disponible
 
    
     # Chargement des images 
@@ -141,11 +156,48 @@ for category in categories:
     fig.draw_confusion_matrix(y_true, y_pred, output_path, f"matrice_confusion_{category}.png", category)
 
     # ROC curve
-    fig.draw_roc_curve(np.concatenate([mse_test_good, mse_test_anomaly]), 
-                    np.concatenate([np.zeros(len(mse_test_good)), np.ones(len(mse_test_anomaly))]), 
+    all_mse_scores = np.concatenate([mse_test_good, mse_test_anomaly])
+    fig.draw_roc_curve(all_mse_scores, 
+                    y_true, 
                     output_path, 
                     output_filename=f"roc_curve_{category}.png", 
                     category=category)
 
     # Visualisation des images reconstruites pour les anomalies
     fig.compare_orig_encoded(images_test_anomaly, pred_test_anomaly, output_path, f"images_reconstruites_test_anomalies_{category}.png")
+
+    # Calcul des métriques et écriture CSV 
+
+    roc_auc = roc_auc_score(y_true, all_mse_scores)
+
+    # tpr/fpr calculés au seuil utilisé (threshold_mse), à partir de la matrice de confusion
+    tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
+    tpr = tp / (tp + fn) if (tp + fn) > 0 else np.nan
+    fpr = fp / (fp + tn) if (fp + tn) > 0 else np.nan
+
+    error_score = mse_test_good.mean()  # erreur moyenne de reconstruction sur les images "good" de test
+
+    row = {
+        "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "category": category,
+        "resized_dimension": f"{resized_dimension[0]}x{resized_dimension[1]}",
+        "batch_size": batch_size,
+        "color_augmentation": False,   # à ajuster si tu ajoutes ce type d'augmentation
+        "move_augmentation": False,    # à ajuster si tu ajoutes ce type d'augmentation
+        "model_type": model_type,
+        "retrain_layers": "none",      # à ajuster si tu fais du fine-tuning de couches VGG par ex.
+        "loss": final_loss,
+        "error_score": error_score,
+        "roc_auc": roc_auc,
+        "tpr": tpr,
+        "fpr": fpr,
+    }
+
+    file_exists = results_csv_path.is_file()
+    with open(results_csv_path, mode="a", newline="") as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=csv_columns)
+        if not file_exists:
+            writer.writeheader()
+        writer.writerow(row)
+
+    print(f"Résultats ajoutés à {results_csv_path}")
