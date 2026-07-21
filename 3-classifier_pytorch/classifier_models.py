@@ -30,22 +30,59 @@ class CustomModel():
         weights = models.EfficientNet_B0_Weights.IMAGENET1K_V1
         model = models.efficientnet_b0(weights = weights)
 
-        for param in model.parameters():
-            param.requires_grad = False
-
+        if num_classes == 2:
+            self.num_outputs = 1
+        else:
+            self.num_outputs = num_classes
+        
         model.classifier[-1] = torch.nn.Linear(
-            model.classifier[-1].in_features, num_classes, 
+            model.classifier[-1].in_features, self.num_outputs, 
         )
         self.model = model
         self.model.to(device)
         self.device = device
 
+        self.unfreeze_last_n_layers(0)
+
         self.preprocess = weights.transforms()
-        self.criterion = torch.nn.CrossEntropyLoss()
+        if self.num_outputs == 1:
+            self.criterion = torch.nn.BCEWithLogitsLoss() #torch.nn.CrossEntropyLoss()
+        else:
+            self.criterion = torch.nn.CrossEntropyLoss()
 
         self.optimizer = torch.optim.Adam(model.parameters(), lr=initial_lr)
         self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
             self.optimizer, **reduce_lr)
+        
+    def unfreeze_last_n_layers(self, n):
+        """ Unfreezes the last n layers of the model and 
+        freezes the other layers
+        Parameters:
+        - n (int): Number of layers to freeze. Set to -1 to unfreeze the whole model.
+            If 0, the whole model is frozen. If > 0, the last n layers are unfrozen.
+        """
+        # Modules qui possèdent directement des paramètres
+        if n <= 0:
+            for param in self.model.parameters():
+                param.requires_grad = (n < 0)
+        else:
+            layers = [
+                module
+                for module in self.model.modules()
+                if next(module.parameters(recurse=False), None) is not None
+            ]
+
+            if n > len(layers):
+                raise ValueError(
+                    f"Impossible de geler {n} couches, le modèle ne contient que {len(layers)} couches paramétrées."
+                )
+            for layer in layers[:-n]:
+                for param in layer.parameters(recurse=False):
+                    param.requires_grad = False
+            for layer in layers[-n:]:
+                for param in layer.parameters(recurse=False):
+                    param.requires_grad = True
+
 
     def test_criterion(self, dataloader):
         X_batch, y_batch = next(iter(dataloader))
@@ -82,7 +119,11 @@ class CustomModel():
                 X, y = [b.to(self.device) for b in batch]
                 self.model.zero_grad()
 
-                y_hat = self.model(self.preprocess(X))
+                y_hat = self.model( X )
+
+                # Si le tensor y n'a qu'une dimension, j'en ajoute une
+                if y.dim() == 1:
+                    y = y.unsqueeze(1)
 
                 loss_value = self.criterion(y_hat, y)
                 loss_value.backward()
@@ -103,8 +144,12 @@ class CustomModel():
             )
             for batch in progress_bar:
                 X, y = [b.to(self.device) for b in batch]
+                # Si y n'a qu'une dimension, j'en ajoute une
+                if y.dim() == 1:
+                    y = y.unsqueeze(1)
+
                 with torch.no_grad():
-                    y_hat = self.model(self.preprocess(X))
+                    y_hat = self.model( X )
                 
                 loss_value = self.criterion(y_hat, y)
                 loss_test.append(loss_value.item())
@@ -119,3 +164,33 @@ class CustomModel():
             )
 
         return losses
+    
+    def evaluate(self, dataloader):
+        self.model.eval()
+
+        losses=[]
+        y_pred=[]
+        y_true=[]
+
+        progress_bar=tqdm(dataloader, leave=False)
+        for batch in progress_bar:
+            X, y = [b.to(self.device) for b in batch]
+            # Si y n'a qu'une dimension, j'en ajoute une
+            if y.dim() == 1:
+                y = y.unsqueeze(1)
+
+            with torch.no_grad():
+                y_hat = self.model(X)
+            
+            loss_value = self.criterion(y_hat, y)
+            losses.append(loss_value.item())
+
+            y_pred_prob = y_hat.detach().cpu().numpy()
+            if y_pred_prob.shape[1] > 1:
+                y_pred.extend( np.argmax(y_pred_prob, axis=1) )
+            else:
+                y_pred.extend( np.array(y_pred_prob > 0.5, dtype=int) )
+
+            y_true.extend(y.detach().cpu().numpy())
+
+            return np.mean(losses), y_true, y_pred

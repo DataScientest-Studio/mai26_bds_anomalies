@@ -49,12 +49,17 @@ df['image_path'] = df.apply(
 )
 
 class AnomalyDataset( Dataset ):
-    def __init__(self, category, train=True, transform = None, df=df):
+    def __init__(self, category, train=True, binary=False, transform = None, df=df):
         df = df[(df['category'] == category) & (df["train"]==train)]
         self.X = df.drop(['quality'], axis=1)
 
-        self.y = df['quality']
-        self.classes = sorted(df["quality"].unique())
+        self.binary=binary
+        if binary:
+            self.y = df['quality'] != 'good'
+            self.classes = ['good', 'anomaly']
+        else:
+            self.y = df['quality']
+            self.classes = sorted(df["quality"].unique())
         self.class_to_idx = {name: idx for idx, name in enumerate(self.classes)}
 
         self.transform = transform
@@ -64,8 +69,11 @@ class AnomalyDataset( Dataset ):
 
         if self.transform is not None:
             img = self.transform(img)
-
-        label = self.class_to_idx[self.y.iloc[idx]]
+        
+        if self.binary:
+            label = float(self.y.iloc[idx])
+        else:
+            label = self.class_to_idx[self.y.iloc[idx]]
 
         return img, label
 
