@@ -83,13 +83,13 @@ if not os.path.exists(output_path):
 ##########################################
 
 #categories = ['bottle', 'cable', 'capsule', 'carpet', 'grid',
-#    'hazelnut', 'leather', 'metal_nut', 'pill', 'screw_preprocessed',
+#    'hazelnut', 'leather', 'metal_nut', 'pill', 'screw', 'screw_preprocessed',
 #    'tile', 'toothbrush', 'transistor', 'wood', 'zipper', 
 #    'metal_plate']
 categories = ['bottle', 'cable', 'capsule', 'carpet', 'grid',
-    'hazelnut', 'leather', 'metal_nut', 'pill', 
-    'tile', 'toothbrush', 'transistor', 'wood', 'zipper', 
-    'metal_plate']
+   'hazelnut', 'leather', 'metal_nut', 'pill', 'screw', 'screw_preprocessed',
+   'tile', 'toothbrush', 'transistor', 'wood', 'zipper', 
+   'metal_plate']
 
 resized_dimension = (256,256)
 batch_size = 8
@@ -98,8 +98,8 @@ grayscale = True
 color_augmentation=False
 move_augmentation=False
 
-model_type = 'conv' # 'conv', 'dense_conv', 'conv_dense', 'dense', 'convtl', 'convtl_dense'
-retrain_layers = 8 # en cas de transfer learning, indique le type et la profondeur du fine-tuning :
+model_type = 'convtl' # 'conv', 'dense_conv', 'conv_dense', 'dense', 'convtl', 'convtl_dense'
+retrain_layers = 4 # en cas de transfer learning, indique le type et la profondeur du fine-tuning :
 # 0 : feature extraction uniquement, on ne ré-entraine pas le modèle
 # 1 à n : fine-tuning partiel, on fine-tune les n dernières couches du modèle
 # -1 : fine-tuning total
@@ -205,7 +205,7 @@ for category in categories:
 
     train_cat = (not no_train) | (not (model_file).is_file())
     if train_cat:
-
+        print(train_ds)
         nb_channels = detect_nb_couleurs(train_ds)
         autoencoder = create_model(model=model_type, loss=loss, error_score=error_score, 
                                    resized_dimension= resized_dimension, nb_channels= nb_channels, retrain_layers=retrain_layers)

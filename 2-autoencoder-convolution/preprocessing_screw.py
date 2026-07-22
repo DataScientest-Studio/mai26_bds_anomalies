@@ -13,7 +13,13 @@ new_path = Path(getenv("PATH_DATASET")) / "screw_preprocessed"
 
 def get_screw_contour(image):
     # Je crée un masque en noir et blanc
-    mask = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    if image.ndim == 2:
+        mask = image
+    elif image.shape[-1] == 1:
+        mask = image[..., 0]
+    else:
+        mask = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
     mask = cv2.GaussianBlur(mask, (5, 5), 0)
     mask = cv2.threshold(mask, 128., 255., type=cv2.THRESH_BINARY_INV)[1]
     mask = mask.astype(np.uint8)
@@ -124,6 +130,7 @@ def detect_head_side(image):
 def preprocess_screw(image, mask=None):
     image = image.astype(np.uint8)
     initial_shape = image.shape
+    keep_single_channel = image.ndim == 3 and image.shape[-1] == 1
 
     image, mask = align_horizontally(image, mask)
 
@@ -132,6 +139,9 @@ def preprocess_screw(image, mask=None):
         image, mask=rotate_image(image, 180, mask)
 
     image, mask = center_crop_screw(image, initial_shape, mask)
+
+    if keep_single_channel and image.ndim == 2:
+        image = image[..., np.newaxis]
     
     if mask is None:
         return image
