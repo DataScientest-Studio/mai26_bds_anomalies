@@ -86,16 +86,20 @@ if not os.path.exists(output_path):
 #    'hazelnut', 'leather', 'metal_nut', 'pill', 'screw_preprocessed',
 #    'tile', 'toothbrush', 'transistor', 'wood', 'zipper', 
 #    'metal_plate']
-categories = ['screw_preprocessed']
+categories = ['bottle', 'cable', 'capsule', 'carpet', 'grid',
+    'hazelnut', 'leather', 'metal_nut', 'pill', 
+    'tile', 'toothbrush', 'transistor', 'wood', 'zipper', 
+    'metal_plate']
 
-resized_dimension = (128,128)
-batch_size = 16
+resized_dimension = (256,256)
+batch_size = 8
 
+grayscale = True
 color_augmentation=False
 move_augmentation=False
 
-model_type = 'conv_dense' # 'conv', 'dense_conv', 'conv_dense', 'dense', 'convtl', 'convtl_dense'
-retrain_layers = -1 # en cas de transfer learning, indique le type et la profondeur du fine-tuning :
+model_type = 'conv' # 'conv', 'dense_conv', 'conv_dense', 'dense', 'convtl', 'convtl_dense'
+retrain_layers = 8 # en cas de transfer learning, indique le type et la profondeur du fine-tuning :
 # 0 : feature extraction uniquement, on ne ré-entraine pas le modèle
 # 1 à n : fine-tuning partiel, on fine-tune les n dernières couches du modèle
 # -1 : fine-tuning total
@@ -109,6 +113,7 @@ threshold_percentile = 80
 parameters = dict(
     resized_dimension = resized_dimension, 
     batch_size = batch_size, 
+    grayscale = grayscale, 
     color_augmentation = color_augmentation, 
     move_augmentation = move_augmentation, 
     model_type = model_type, 
@@ -175,19 +180,26 @@ for category in categories:
 
     model_file = output_path / f"{category}_autoencoder.keras"
 
-    train_ds = image_dataset_from_directory(
-        image_path / category / 'train', batch_size=batch_size, 
+    images_loading_attributes = dict(
+        batch_size=batch_size, 
         image_size=resized_dimension, 
+    )
+    if grayscale:
+        images_loading_attributes['color_mode'] = 'grayscale'
+
+    train_ds = image_dataset_from_directory( 
+        image_path / category / 'train', 
         validation_split=0.15, subset="training", seed=42, 
         label_mode=None, 
+        **images_loading_attributes,
     )
     train_ds = train_ds.map(lambda x: augment_autoencoder(data_augmenter, x)).prefetch(AUTOTUNE)
 
     val_ds = image_dataset_from_directory(
-        image_path / category / 'train', batch_size=batch_size, 
-        image_size=resized_dimension, 
+        image_path / category / 'train', 
         validation_split=0.15, subset="validation", seed=42, 
         label_mode=None, 
+        **images_loading_attributes,
     )
     val_ds = val_ds.map(lambda x: augment_autoencoder(data_augmenter, x)).prefetch(AUTOTUNE)
 
@@ -217,8 +229,8 @@ for category in categories:
 
     # Train full (pas de split validation)
     trainf_ds = image_dataset_from_directory(
-        image_path / category / 'train', batch_size=batch_size, 
-        image_size=resized_dimension, 
+        image_path / category / 'train', 
+        **images_loading_attributes,
     )
     trainf_ds = trainf_ds.map(
         lambda x, y: (
@@ -228,8 +240,8 @@ for category in categories:
     ).prefetch(AUTOTUNE)
 
     test_ds = image_dataset_from_directory(
-        image_path / category / 'test', batch_size=batch_size, 
-        image_size=resized_dimension, 
+        image_path / category / 'test', 
+        **images_loading_attributes,
     )
     good_value = test_ds.class_names.index('good')
     test_ds = test_ds.map(
