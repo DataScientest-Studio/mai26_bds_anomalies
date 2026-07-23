@@ -30,8 +30,8 @@ from pathlib import Path
 load_dotenv()
 image_path = Path(os.getenv("PATH_DATASET"))
 
-# output_path : parent directory et output
-output_path = Path(__file__).parent.parent.joinpath("output", Path(__file__).parent.stem)
+# parent_output_path : parent directory et output
+parent_output_path = Path(__file__).parent.parent.joinpath("output", Path(__file__).parent.stem)
 
 """ Ce script charge les images, crée un autoencodeur, l'entraîne sur les images et sauvegarde le modèle 
 et l'historique de l'entraînement."""
@@ -75,8 +75,8 @@ def augment_autoencoder(data_augmenter, x):
 ### SCRIPT PRINCIPAL ###
 
 # Si le répertoire output n'existe pas, on le crée
-if not os.path.exists(output_path):
-    os.makedirs(output_path)
+if not os.path.exists(parent_output_path):
+    os.makedirs(parent_output_path)
 
 
 ##########################################
@@ -85,19 +85,18 @@ if not os.path.exists(output_path):
 
 #categories = ['bottle', 'cable', 'capsule', 'carpet', 'grid',
 #    'hazelnut', 'leather', 'metal_nut', 'pill', 'screw', 'screw_preprocessed',
-#    'tile', 'toothbrush', 'transistor', 'wood', 'zipper', 
-#    'metal_plate']
-categories = ['metal_plate']
+#    'tile', 'toothbrush', 'transistor', 'wood', 'zipper', 'metal_plate']
+categories = ['capsule']
 
-resized_dimension = (224,224)
-batch_size = 8
+resized_dimension = (64,64)
+batch_size = 16
 
-grayscale = False
+grayscale = True
 color_augmentation=False
 move_augmentation=False
 
-model_type = 'convtl_dense' # 'conv', 'dense_conv', 'conv_dense', 'dense', 'convtl', 'convtl_dense'
-retrain_layers = 4 # en cas de transfer learning, indique le type et la profondeur du fine-tuning :
+model_type = 'convtl' # 'conv', 'dense_conv', 'conv_dense', 'dense', 'convtl', 'convtl_dense'
+retrain_layers = 0 # en cas de transfer learning, indique le type et la profondeur du fine-tuning :
 # 0 : feature extraction uniquement, on ne ré-entraine pas le modèle
 # 1 à n : fine-tuning partiel, on fine-tune les n dernières couches du modèle
 # -1 : fine-tuning total
@@ -107,6 +106,9 @@ error_score = 'mse' # 'mae', 'mse'
 threshold_percentile = 80
 
 ##########################################
+
+if (model_type not in ['convtl', 'convtl_dense']):
+    retrain_layers=0 # param not relevant is no transfer learning
 
 parameters = dict(
     resized_dimension = resized_dimension, 
@@ -119,6 +121,18 @@ parameters = dict(
     loss = loss, 
     error_score = error_score, 
 )
+
+def parameters_to_dirname():
+    params = parameters.copy()
+    h,w= params['resized_dimension']
+    if w==h:
+        params['resized_dimension']=str(h)
+    else:
+        params['resized_dimension']=str(h) + '_'+str(w)
+
+    params=map(str, params.values())
+
+    return "-".join(params)
 
 def parameters_to_str(category):
     texte = f"###################################################\n"
@@ -137,7 +151,7 @@ def save_train_result(category, roc_auc, tpr, fpr):
     )
 
     # check if csv file exists
-    result_file = output_path / "0_train_results.csv"
+    result_file = parent_output_path / "0_train_results.csv"
     if not (result_file).is_file():
         with open(result_file, "w") as f:
             header = "date,category"
@@ -154,6 +168,10 @@ def save_train_result(category, roc_auc, tpr, fpr):
 
 
 autoencoder = train_ds = val_ds = trainf_ds = test_ds = history = None
+
+output_path = parent_output_path / parameters_to_dirname()
+if not os.path.exists(output_path):
+    os.makedirs(output_path)
 
 for category in categories:
     print(f"***** INITIALIZING Category {category} *****")
