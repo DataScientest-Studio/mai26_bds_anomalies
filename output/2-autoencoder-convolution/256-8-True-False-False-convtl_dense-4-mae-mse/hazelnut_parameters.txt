@@ -1,0 +1,13 @@
+###################################################
+### Paramètres utilisés - catégorie hazelnut    ###
+###################################################
+Date : 2026-07-22 21:23:12
+resized_dimension  = (256, 256)
+batch_size         = 8
+grayscale          = True
+color_augmentation = False
+move_augmentation  = False
+model_type         = convtl_dense
+retrain_layers     = 4
+loss               = mae
+error_score        = mse

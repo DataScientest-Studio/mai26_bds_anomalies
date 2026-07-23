@@ -1,0 +1,13 @@
+###################################################
+### Paramètres utilisés - catégorie metal_nut   ###
+###################################################
+Date : 2026-07-22 16:08:31
+resized_dimension  = (256, 256)
+batch_size         = 8
+grayscale          = True
+color_augmentation = False
+move_augmentation  = False
+model_type         = convtl
+retrain_layers     = 4
+loss               = mae
+error_score        = mse

@@ -1,0 +1,55 @@
+--- Classification report - LEATHER - seuil 80% (0.0013263037) ---
+              precision    recall  f1-score   support
+
+           0       0.00      0.00      0.00        32
+           1       0.73      0.95      0.82        92
+
+    accuracy                           0.70       124
+   macro avg       0.37      0.47      0.41       124
+weighted avg       0.54      0.70      0.61       124
+
+
+--- Classification report - LEATHER - seuil 85% (0.0013700246) ---
+              precision    recall  f1-score   support
+
+           0       0.00      0.00      0.00        32
+           1       0.73      0.92      0.81        92
+
+    accuracy                           0.69       124
+   macro avg       0.36      0.46      0.41       124
+weighted avg       0.54      0.69      0.60       124
+
+
+--- Classification report - LEATHER - seuil 90% (0.0013758198) ---
+              precision    recall  f1-score   support
+
+           0       0.00      0.00      0.00        32
+           1       0.72      0.91      0.81        92
+
+    accuracy                           0.68       124
+   macro avg       0.36      0.46      0.40       124
+weighted avg       0.54      0.68      0.60       124
+
+
+--- Classification report - LEATHER - seuil 95% (0.0014940987) ---
+              precision    recall  f1-score   support
+
+           0       0.00      0.00      0.00        32
+           1       0.71      0.84      0.77        92
+
+    accuracy                           0.62       124
+   macro avg       0.35      0.42      0.38       124
+weighted avg       0.52      0.62      0.57       124
+
+
+--- Classification report - LEATHER - seuil 99% (0.0016027546) ---
+              precision    recall  f1-score   support
+
+           0       0.00      0.00      0.00        32
+           1       0.70      0.79      0.74        92
+
+    accuracy                           0.59       124
+   macro avg       0.35      0.40      0.37       124
+weighted avg       0.52      0.59      0.55       124
+
+

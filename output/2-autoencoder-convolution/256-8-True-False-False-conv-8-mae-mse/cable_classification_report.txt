@@ -1,0 +1,55 @@
+--- Classification report - CABLE - seuil 80% (0.0049510081) ---
+              precision    recall  f1-score   support
+
+           0       0.39      0.95      0.56        58
+           1       0.70      0.08      0.14        92
+
+    accuracy                           0.41       150
+   macro avg       0.55      0.51      0.35       150
+weighted avg       0.58      0.41      0.30       150
+
+
+--- Classification report - CABLE - seuil 85% (0.0051782033) ---
+              precision    recall  f1-score   support
+
+           0       0.39      0.95      0.55        58
+           1       0.67      0.07      0.12        92
+
+    accuracy                           0.41       150
+   macro avg       0.53      0.51      0.34       150
+weighted avg       0.56      0.41      0.29       150
+
+
+--- Classification report - CABLE - seuil 90% (0.0054222196) ---
+              precision    recall  f1-score   support
+
+           0       0.39      0.97      0.56        58
+           1       0.75      0.07      0.12        92
+
+    accuracy                           0.41       150
+   macro avg       0.57      0.52      0.34       150
+weighted avg       0.61      0.41      0.29       150
+
+
+--- Classification report - CABLE - seuil 95% (0.0054568322) ---
+              precision    recall  f1-score   support
+
+           0       0.39      0.97      0.56        58
+           1       0.75      0.07      0.12        92
+
+    accuracy                           0.41       150
+   macro avg       0.57      0.52      0.34       150
+weighted avg       0.61      0.41      0.29       150
+
+
+--- Classification report - CABLE - seuil 99% (0.0056172120) ---
+              precision    recall  f1-score   support
+
+           0       0.39      0.97      0.56        58
+           1       0.71      0.05      0.10        92
+
+    accuracy                           0.41       150
+   macro avg       0.55      0.51      0.33       150
+weighted avg       0.59      0.41      0.28       150
+
+

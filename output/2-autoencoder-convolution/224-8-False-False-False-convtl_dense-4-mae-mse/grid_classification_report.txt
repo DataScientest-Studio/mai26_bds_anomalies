@@ -1,0 +1,55 @@
+--- Classification report - GRID - seuil 80% (0.0373320282) ---
+              precision    recall  f1-score   support
+
+           0       0.27      1.00      0.42        21
+           1       0.00      0.00      0.00        57
+
+    accuracy                           0.27        78
+   macro avg       0.13      0.50      0.21        78
+weighted avg       0.07      0.27      0.11        78
+
+
+--- Classification report - GRID - seuil 85% (0.0387907028) ---
+              precision    recall  f1-score   support
+
+           0       0.27      1.00      0.42        21
+           1       0.00      0.00      0.00        57
+
+    accuracy                           0.27        78
+   macro avg       0.13      0.50      0.21        78
+weighted avg       0.07      0.27      0.11        78
+
+
+--- Classification report - GRID - seuil 90% (0.0407611541) ---
+              precision    recall  f1-score   support
+
+           0       0.27      1.00      0.42        21
+           1       0.00      0.00      0.00        57
+
+    accuracy                           0.27        78
+   macro avg       0.13      0.50      0.21        78
+weighted avg       0.07      0.27      0.11        78
+
+
+--- Classification report - GRID - seuil 95% (0.0434068553) ---
+              precision    recall  f1-score   support
+
+           0       0.27      1.00      0.42        21
+           1       0.00      0.00      0.00        57
+
+    accuracy                           0.27        78
+   macro avg       0.13      0.50      0.21        78
+weighted avg       0.07      0.27      0.11        78
+
+
+--- Classification report - GRID - seuil 99% (0.0473607965) ---
+              precision    recall  f1-score   support
+
+           0       0.27      1.00      0.42        21
+           1       0.00      0.00      0.00        57
+
+    accuracy                           0.27        78
+   macro avg       0.13      0.50      0.21        78
+weighted avg       0.07      0.27      0.11        78
+
+

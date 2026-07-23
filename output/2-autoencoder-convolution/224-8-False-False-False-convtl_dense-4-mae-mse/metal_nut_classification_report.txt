@@ -1,0 +1,55 @@
+--- Classification report - METAL_NUT - seuil 80% (0.0045340564) ---
+              precision    recall  f1-score   support
+
+           0       0.07      0.45      0.12        22
+           1       0.97      0.75      0.84       533
+
+    accuracy                           0.74       555
+   macro avg       0.52      0.60      0.48       555
+weighted avg       0.93      0.74      0.82       555
+
+
+--- Classification report - METAL_NUT - seuil 85% (0.0048878258) ---
+              precision    recall  f1-score   support
+
+           0       0.07      0.55      0.12        22
+           1       0.97      0.70      0.82       533
+
+    accuracy                           0.70       555
+   macro avg       0.52      0.62      0.47       555
+weighted avg       0.94      0.70      0.79       555
+
+
+--- Classification report - METAL_NUT - seuil 90% (0.0058929562) ---
+              precision    recall  f1-score   support
+
+           0       0.08      0.77      0.14        22
+           1       0.99      0.63      0.77       533
+
+    accuracy                           0.64       555
+   macro avg       0.53      0.70      0.46       555
+weighted avg       0.95      0.64      0.74       555
+
+
+--- Classification report - METAL_NUT - seuil 95% (0.0060000257) ---
+              precision    recall  f1-score   support
+
+           0       0.09      0.86      0.16        22
+           1       0.99      0.62      0.76       533
+
+    accuracy                           0.63       555
+   macro avg       0.54      0.74      0.46       555
+weighted avg       0.96      0.63      0.74       555
+
+
+--- Classification report - METAL_NUT - seuil 99% (0.0070461179) ---
+              precision    recall  f1-score   support
+
+           0       0.09      1.00      0.16        22
+           1       1.00      0.56      0.72       533
+
+    accuracy                           0.58       555
+   macro avg       0.54      0.78      0.44       555
+weighted avg       0.96      0.58      0.70       555
+
+

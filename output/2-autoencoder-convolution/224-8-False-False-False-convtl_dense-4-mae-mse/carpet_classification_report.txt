@@ -1,0 +1,55 @@
+--- Classification report - CARPET - seuil 80% (0.0186531357) ---
+              precision    recall  f1-score   support
+
+           0       0.49      0.64      0.55        28
+           1       0.88      0.79      0.83        89
+
+    accuracy                           0.75       117
+   macro avg       0.68      0.71      0.69       117
+weighted avg       0.78      0.75      0.76       117
+
+
+--- Classification report - CARPET - seuil 85% (0.0189232621) ---
+              precision    recall  f1-score   support
+
+           0       0.49      0.75      0.59        28
+           1       0.91      0.75      0.82        89
+
+    accuracy                           0.75       117
+   macro avg       0.70      0.75      0.71       117
+weighted avg       0.81      0.75      0.77       117
+
+
+--- Classification report - CARPET - seuil 90% (0.0195424184) ---
+              precision    recall  f1-score   support
+
+           0       0.45      0.79      0.57        28
+           1       0.91      0.70      0.79        89
+
+    accuracy                           0.72       117
+   macro avg       0.68      0.74      0.68       117
+weighted avg       0.80      0.72      0.74       117
+
+
+--- Classification report - CARPET - seuil 95% (0.0203685667) ---
+              precision    recall  f1-score   support
+
+           0       0.40      0.89      0.56        28
+           1       0.95      0.58      0.72        89
+
+    accuracy                           0.66       117
+   macro avg       0.67      0.74      0.64       117
+weighted avg       0.82      0.66      0.68       117
+
+
+--- Classification report - CARPET - seuil 99% (0.0229507536) ---
+              precision    recall  f1-score   support
+
+           0       0.38      0.96      0.55        28
+           1       0.98      0.51      0.67        89
+
+    accuracy                           0.62       117
+   macro avg       0.68      0.73      0.61       117
+weighted avg       0.84      0.62      0.64       117
+
+

@@ -1,0 +1,55 @@
+--- Classification report - WOOD - seuil 80% (0.0058559543) ---
+              precision    recall  f1-score   support
+
+           0       0.63      1.00      0.78        19
+           1       1.00      0.82      0.90        60
+
+    accuracy                           0.86        79
+   macro avg       0.82      0.91      0.84        79
+weighted avg       0.91      0.86      0.87        79
+
+
+--- Classification report - WOOD - seuil 85% (0.0060635637) ---
+              precision    recall  f1-score   support
+
+           0       0.61      1.00      0.76        19
+           1       1.00      0.80      0.89        60
+
+    accuracy                           0.85        79
+   macro avg       0.81      0.90      0.82        79
+weighted avg       0.91      0.85      0.86        79
+
+
+--- Classification report - WOOD - seuil 90% (0.0063319393) ---
+              precision    recall  f1-score   support
+
+           0       0.61      1.00      0.76        19
+           1       1.00      0.80      0.89        60
+
+    accuracy                           0.85        79
+   macro avg       0.81      0.90      0.82        79
+weighted avg       0.91      0.85      0.86        79
+
+
+--- Classification report - WOOD - seuil 95% (0.0066508357) ---
+              precision    recall  f1-score   support
+
+           0       0.58      1.00      0.73        19
+           1       1.00      0.77      0.87        60
+
+    accuracy                           0.82        79
+   macro avg       0.79      0.88      0.80        79
+weighted avg       0.90      0.82      0.83        79
+
+
+--- Classification report - WOOD - seuil 99% (0.0079712886) ---
+              precision    recall  f1-score   support
+
+           0       0.54      1.00      0.70        19
+           1       1.00      0.73      0.85        60
+
+    accuracy                           0.80        79
+   macro avg       0.77      0.87      0.77        79
+weighted avg       0.89      0.80      0.81        79
+
+

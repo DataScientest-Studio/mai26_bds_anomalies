@@ -1,0 +1,13 @@
+###################################################
+### Paramètres utilisés - catégorie zipper      ###
+###################################################
+Date : 2026-07-23 15:40:31
+resized_dimension  = (224, 224)
+batch_size         = 8
+grayscale          = False
+color_augmentation = False
+move_augmentation  = False
+model_type         = convtl_dense
+retrain_layers     = 4
+loss               = mae
+error_score        = mse
