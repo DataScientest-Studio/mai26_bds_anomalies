@@ -43,18 +43,19 @@ Arguments :
 ### TRAITEMENT DES ARGUMENTS ###
 import sys
 no_train = False
-if len(sys.argv) > 1 and sys.argv[1] == "--no_train":
-    no_train = True
-    print("Mode : pas d'entraînement, chargement du modèle depuis le fichier autoencoder.joblib")
 # si -h ou --help est présent, afficher l'aide
 if len(sys.argv) > 1 and sys.argv[1] in ["-h", "--help"]:
     print(help)
     sys.exit(0)
-# si d'autres arguments sont présents, afficher une erreur
-if len(sys.argv) > 2:
-    print("Erreur : arguments non reconnus :", sys.argv[2:])
-    print("Usage : python autoencode.py [no_train]")
-    sys.exit(1)
+if len(sys.argv) > 1 and sys.argv[1] == "--no_train":
+    no_train = True
+    print("Mode : pas d'entraînement, chargement du modèle depuis le fichier category_autoencoder.keras")
+else:
+    # si d'autres arguments sont présents, afficher une erreur
+    if len(sys.argv) > 1:
+        print("Erreur : arguments non reconnus :", sys.argv[2:])
+        print("Usage : python autoencode.py [--no_train]")
+        sys.exit(1)
 
 AUTOTUNE = tf.data.AUTOTUNE
 
@@ -86,25 +87,22 @@ if not os.path.exists(output_path):
 #    'hazelnut', 'leather', 'metal_nut', 'pill', 'screw', 'screw_preprocessed',
 #    'tile', 'toothbrush', 'transistor', 'wood', 'zipper', 
 #    'metal_plate']
-categories = ['bottle', 'cable', 'capsule', 'carpet', 'grid',
-   'hazelnut', 'leather', 'metal_nut', 'pill', 'screw', 'screw_preprocessed',
-   'tile', 'toothbrush', 'transistor', 'wood', 'zipper', 
-   'metal_plate']
+categories = ['carpet']
 
-resized_dimension = (256,256)
+resized_dimension = (224,224)
 batch_size = 8
 
-grayscale = True
+grayscale = False
 color_augmentation=False
 move_augmentation=False
 
-model_type = 'convtl' # 'conv', 'dense_conv', 'conv_dense', 'dense', 'convtl', 'convtl_dense'
+model_type = 'convtl_dense' # 'conv', 'dense_conv', 'conv_dense', 'dense', 'convtl', 'convtl_dense'
 retrain_layers = 4 # en cas de transfer learning, indique le type et la profondeur du fine-tuning :
 # 0 : feature extraction uniquement, on ne ré-entraine pas le modèle
 # 1 à n : fine-tuning partiel, on fine-tune les n dernières couches du modèle
 # -1 : fine-tuning total
-loss = 'mae' # 'mae', 'mse'
-error_score = 'mse' # 'mae', 'mse'
+loss = 'mse' # 'mae', 'mse'
+error_score = 'mae' # 'mae', 'mse'
 
 threshold_percentile = 80
 
@@ -158,7 +156,7 @@ def save_train_result(category, roc_auc, tpr, fpr):
 autoencoder = train_ds = val_ds = trainf_ds = test_ds = history = None
 
 for category in categories:
-
+    print(f"***** INITIALIZING Category {category} *****")
     # Repart d'un état propre à chaque catégorie. clear_session() seul ne suffit
     # pas : tant que autoencoder/train_ds/... de la catégorie précédente restent
     # liés à leur nom de variable, leurs tenseurs (poids d'EfficientNetB0 compris)
@@ -172,7 +170,7 @@ for category in categories:
     tf.keras.backend.clear_session()
     gc.collect()
 
-    data_augmenter = DataAugmentation(colors=color_augmentation, moves=move_augmentation, screw=(category=="screw"))
+    data_augmenter = DataAugmentation(colors=color_augmentation, moves=move_augmentation) #screw=(category=="screw"))
 
     # Save model parameters
     with open(output_path / f"{category}_parameters.txt", "w") as f:

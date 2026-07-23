@@ -7,6 +7,7 @@ from sklearn.metrics import roc_curve, auc
 import tensorflow as tf
 
 from functools import wraps
+import cv2
 
 def logging_function(function):
     @wraps(function)
@@ -78,6 +79,7 @@ def compare_orig_encoded(image_dataset, model, output_path, output_filename="ima
         plt.title(f"Erreur\nMAE={mae:.5f}\nMSE={mse:.5f}")
         
     plt.savefig(output_path / output_filename)
+
 
 # Histogramme des erreurs sur les images d'entraînement (bonnes)
 @logging_function
@@ -154,3 +156,42 @@ def draw_roc_curve(mses, labels, output_path, output_filename="roc_curve.png", c
     plt.savefig(output_path / output_filename)
 
     return roc_auc
+
+
+def make_gradcam_heatmap(img_array, autoencoder, last_conv_layer_name, encoder_model_name="encodeur"):
+    #encoder = autoencoder.get_layer(encoder_model_name)
+    last_conv_layer = autoencoder.get_layer(last_conv_layer_name)
+
+    grad_model = tf.keras.Model(
+        autoencoder.inputs, [last_conv_layer.output, autoencoder.output]
+    )
+
+    with tf.GradientTape() as tape:
+        conv_output, reconstruction = grad_model(img_array)
+
+        loss = tf.reduce_mean(tf.square(img_array - reconstruction))
+
+    grads = tape.gradient(loss, conv_output)
+    pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
+
+    conv_output = conv_output[0]
+    heatmap = conv_output @ pooled_grads[..., tf.newaxis]
+    heatmap = tf.squeeze(heatmap)
+
+    heatmap = tf.maximum(heatmap, 0)
+    heatmap /= (tf.math.reduce_max(heatmap) + 1e-8)
+
+    return heatmap.numpy(), reconstruction.numpy()
+
+def overlay_heatmap(image, heatmap, alpha=1):
+    heatmap_resized = cv2.resize(heatmap, (image.shape[1], image.shape[0]))
+    heatmap_colored = cv2.applyColorMap(np.uint8(255 * heatmap_resized), cv2.COLORMAP_JET)
+    heatmap_colored = cv2.cvtColor(heatmap_colored, cv2.COLOR_BGR2RGB)
+
+    image_uint8 = np.uint8(255 * image) if np.max(image) <= 1 else image.astype(np.uint8)
+    if image_uint8.shape[-1] == 1:
+        image_uint8 = cv2.cvtColor(image_uint8, cv2.COLOR_GRAY2RGB)
+
+    overlay = cv2.addWeighted(image_uint8, 1 - alpha, heatmap_colored, alpha, 0)
+
+    return overlay

@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 import tensorflow as tf
 from tensorflow.keras.models import Model, load_model
-from tensorflow.keras.layers import Input, Rescaling, Conv2D, MaxPooling2D, UpSampling2D, Dropout, Dense, Flatten, Reshape
+from tensorflow.keras.layers import Input, Rescaling, Conv2D, MaxPooling2D, UpSampling2D, Dropout, Dense, Flatten, Reshape, Concatenate
 from tensorflow.keras.layers import RandomRotation, RandomZoom, RandomContrast, RandomBrightness, RandomTranslation
 
 from tensorflow.keras.applications import EfficientNetB0
@@ -15,7 +15,12 @@ from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCh
 transfer_learning=None
 
 def load_autoencoder(filepath):
-    return load_model(filepath)
+    try:
+        return load_model(filepath)
+    except ValueError as exc:
+        if "Lambda" not in str(exc):
+            raise
+        return load_model(filepath, safe_mode=False)
 
 def get_callbacks(filepath, error_score="mae"):
     callbacks=[]
@@ -333,6 +338,16 @@ def adjust_trainable(base_model, retrain_layers):
             layer.trainable=True
     return base_model
 
+def prepare_imagenet_encoder_inputs(inputs, nb_channels):
+    if nb_channels == 1:
+        return Concatenate(axis=-1, name="grayscale_to_rgb")([inputs, inputs, inputs])
+    if nb_channels != 3:
+        raise ValueError(
+            "Les encodeurs pré-entrainés sur ImageNet attendent des images RGB "
+            f"(3 canaux) ou grayscale convertible en RGB; reçu nb_channels={nb_channels}."
+        )
+    return inputs
+
 def get_model_convtl(resized_dimension, nb_channels, retrain_layers=0): 
     """Encodeur convolutionnel avec transfer learning et décodeur convolutionnel"""
 
@@ -342,12 +357,13 @@ def get_model_convtl(resized_dimension, nb_channels, retrain_layers=0):
         name="input"
     )
 
-    encoder_inputs = Rescaling(255.)(inputs)
+    encoder_inputs = prepare_imagenet_encoder_inputs(inputs, nb_channels)
+    encoder_inputs = Rescaling(255.)(encoder_inputs)
 
     encoder = EfficientNetB0(
         include_top=False,
         weights="imagenet",
-        input_shape=(*resized_dimension, nb_channels),
+        input_shape=(*resized_dimension, 3),
     )
     encoder = adjust_trainable(encoder, retrain_layers)
 
@@ -434,12 +450,13 @@ def get_model_convtl_dense(resized_dimension, nb_channels, retrain_layers=0):
         name="input"
     )
 
-    encoder_inputs = Rescaling(255.)(inputs)
+    encoder_inputs = prepare_imagenet_encoder_inputs(inputs, nb_channels)
+    encoder_inputs = Rescaling(255.)(encoder_inputs)
 
     encoder = EfficientNetB0(
         include_top=False,
         weights="imagenet",
-        input_shape=(*resized_dimension, nb_channels),
+        input_shape=(*resized_dimension, 3),
     )
     encoder = adjust_trainable(encoder, retrain_layers)
 
