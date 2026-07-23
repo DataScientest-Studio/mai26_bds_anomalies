@@ -10,19 +10,19 @@ from tensorflow.keras.applications import EfficientNetB0
 
 import tensorflow_probability as tfp
 
-from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
+from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 
 transfer_learning=None
 
 def load_autoencoder(filepath):
     try:
-        return load_model(filepath)
+        return load_model(filepath, compile=False)
     except ValueError as exc:
         if "Lambda" not in str(exc):
             raise
-        return load_model(filepath, safe_mode=False)
+        return load_model(filepath, compile=False, safe_mode=False)
 
-def get_callbacks(filepath, error_score="mae"):
+def get_callbacks(error_score="mae"):
     callbacks=[]
 
     callbacks.append(
@@ -43,10 +43,6 @@ def get_callbacks(filepath, error_score="mae"):
             patience=15, 
             restore_best_weights=True)
     )
-    callbacks.append(
-        ModelCheckpoint(filepath=filepath, monitor="val_"+error_score, mode='min', save_best_only=True)
-    )
-
     return callbacks
 
 def get_model_dense_conv(resized_dimension, nb_channels):

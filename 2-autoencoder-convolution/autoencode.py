@@ -87,7 +87,7 @@ if not os.path.exists(output_path):
 #    'hazelnut', 'leather', 'metal_nut', 'pill', 'screw', 'screw_preprocessed',
 #    'tile', 'toothbrush', 'transistor', 'wood', 'zipper', 
 #    'metal_plate']
-categories = ['carpet']
+categories = ['metal_plate']
 
 resized_dimension = (224,224)
 batch_size = 8
@@ -101,8 +101,8 @@ retrain_layers = 4 # en cas de transfer learning, indique le type et la profonde
 # 0 : feature extraction uniquement, on ne ré-entraine pas le modèle
 # 1 à n : fine-tuning partiel, on fine-tune les n dernières couches du modèle
 # -1 : fine-tuning total
-loss = 'mse' # 'mae', 'mse'
-error_score = 'mae' # 'mae', 'mse'
+loss = 'mae' # 'mae', 'mse'
+error_score = 'mse' # 'mae', 'mse'
 
 threshold_percentile = 80
 
@@ -214,12 +214,14 @@ for category in categories:
             train_ds, validation_data=val_ds, 
             epochs=100, 
             verbose=1, shuffle=False, 
-            callbacks=get_callbacks(model_file, error_score=error_score), 
+            callbacks=get_callbacks(error_score=error_score), 
         )
 
         save_history_plot(history, output_path / f"{category}_history_plot.png")
 
-    autoencoder = load_autoencoder(model_file)
+        autoencoder.save(model_file, include_optimizer=False)
+    else:
+        autoencoder = load_autoencoder(model_file)
 
     #########################
     # Chargement des images #
