@@ -21,7 +21,7 @@ import tensorflow as tf
 
 from keras.utils import image_dataset_from_directory
 
-from autoencoder_model import create_model, save_history_plot, get_callbacks, load_autoencoder, calculate_errors_labels
+from autoencoder_model import create_model, save_history_plot, get_callbacks, load_autoencoder, calculate_errors_labels, get_grad_layer_name
 from autoencode_data_augment import DataAugmentation
 
 from dotenv import load_dotenv
@@ -88,14 +88,14 @@ if not os.path.exists(parent_output_path):
 #    'tile', 'toothbrush', 'transistor', 'wood', 'zipper', 'metal_plate']
 categories = ['capsule']
 
-resized_dimension = (64,64)
-batch_size = 16
+resized_dimension = (128,128)
+batch_size = 8
 
 grayscale = True
 color_augmentation=False
 move_augmentation=False
 
-model_type = 'convtl' # 'conv', 'dense_conv', 'conv_dense', 'dense', 'convtl', 'convtl_dense'
+model_type = 'dense' # 'conv', 'dense_conv', 'conv_dense', 'dense', 'convtl', 'convtl_dense'
 retrain_layers = 0 # en cas de transfer learning, indique le type et la profondeur du fine-tuning :
 # 0 : feature extraction uniquement, on ne ré-entraine pas le modèle
 # 1 à n : fine-tuning partiel, on fine-tune les n dernières couches du modèle
@@ -121,6 +121,8 @@ parameters = dict(
     loss = loss, 
     error_score = error_score, 
 )
+
+grad_layer_name = get_grad_layer_name(model_type)
 
 def parameters_to_dirname():
     params = parameters.copy()
@@ -261,6 +263,7 @@ for category in categories:
         image_path / category / 'test', 
         **images_loading_attributes,
     )
+    test_class_names = test_ds.class_names
     good_value = test_ds.class_names.index('good')
     test_ds = test_ds.map(
         lambda x, y: (
@@ -286,11 +289,11 @@ for category in categories:
     ##################
 
     # Visualisation des images originales reconstruites
-    fig.compare_orig_encoded(trainf_ds, autoencoder, output_path, f"{category}_images_reconstruites_train_good.png")
+    fig.compare_orig_encoded(trainf_ds, autoencoder, output_path, f"{category}_images_reconstruites_train_good.png", grad_layer_name=grad_layer_name)
 
     # Visualisation des images augmentées reconstruites
     if color_augmentation or move_augmentation:
-        fig.compare_orig_encoded(train_ds, autoencoder, output_path, f"{category}_images_reconstruites_train_augmented.png")
+        fig.compare_orig_encoded(train_ds, autoencoder, output_path, f"{category}_images_reconstruites_train_augmented.png", grad_layer_name=grad_layer_name)
 
     # Histogramme des erreurs sur les images d'entraînement (bonnes)
 
@@ -327,7 +330,8 @@ for category in categories:
                     category=category)
 
     # Visualisation des images reconstruites pour les anomalies
-    fig.compare_orig_encoded(test_ds, autoencoder, output_path, f"{category}_images_reconstruites_test_anomalies.png", only_label=1)
+    fig.compare_orig_encoded(test_ds, autoencoder, output_path, f"{category}_images_reconstruites_test_anomalies.png", 
+                             all_classes=True, class_names=test_class_names, grad_layer_name=grad_layer_name)
 
     # Save model parameters
     if train_cat:

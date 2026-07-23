@@ -5,9 +5,12 @@ import seaborn as sns
 from sklearn.metrics import confusion_matrix, classification_report
 from sklearn.metrics import roc_curve, auc
 import tensorflow as tf
+from tensorflow.keras.models import Model
 
 from functools import wraps
 import cv2
+
+DEBUG=False
 
 def logging_function(function):
     @wraps(function)
@@ -20,63 +23,101 @@ def logging_function(function):
 
 # Visualisation des images reconstruites
 @logging_function
-def compare_orig_encoded(image_dataset, model, output_path, output_filename="images_reconstruites_train_good.png", only_label=None):
-    """ Affiche les 6 premières images originales, leur version auto-encodées et leurs différences.
+def compare_orig_encoded(image_dataset, model, output_path, output_filename="images_reconstruites_train_good.png", 
+                         grad_layer_name=None, nb_min_images=5, all_classes=False, class_names={0:"good"}):
+    """ Affiche les num_images premières images originales, leur grad-cam, leur version auto-encodées et leurs différences (MSE).
+    Si only_label est défini, on n'affichera que des images qui ont ce label.
     """
-    nb_col = 6
 
-    if only_label is None:
+    if all_classes is None or all_classes==False:
         for images, labels in image_dataset.take(1):
-            orig_images = images[:nb_col]
+            orig_images = images[:nb_min_images]
+            orig_labels = labels[:nb_min_images].numpy()
 
     else:
         orig_images = []
+        orig_labels = []
+        nb_classes = len(class_names)
         for images, labels in image_dataset:
             for image, label in zip(images, labels):
-                if label == only_label:
+                if label not in orig_labels:
                     orig_images.append(image)
-                    if len(orig_images) >= nb_col:
+                    orig_labels.append(label)
+                    if len(orig_images) >= nb_classes:
                         break
-            if len(orig_images) >= nb_col:
+            if len(orig_images) >= nb_classes:
                 break
         orig_images = tf.stack(orig_images, axis=0)
 
-    encoded_images = model.predict(orig_images)
+    if grad_layer_name is None or grad_layer_name == "":
+        encoded_images = model.predict(orig_images)
+        grad_layer_name = None
+    else:
+        heatmaps, encoded_images = make_gradcam_heatmap(orig_images, model, last_conv_layer_name=grad_layer_name)
 
-    plt.figure(figsize=(14,8))
-    for i in range(nb_col):
+    nb_images = len(orig_images)
+    plt.figure(figsize=(14,3*nb_images))
+    for i in range(nb_images):
         
         image_originale = orig_images[i]
         image_autoencodee = encoded_images[i]
+        image_label = class_names[orig_labels[i]]
 
         if image_originale.ndim == 3 and image_originale.shape[2] > 1:
-            image_erreur = np.abs(image_originale - image_autoencodee).mean(axis=2)
+            image_erreur_mse = np.mean((image_originale - image_autoencodee)**2, axis=2)
+            image_erreur_mae = np.abs(image_originale - image_autoencodee).mean(axis=2)
         else:
-            image_erreur = np.abs(image_originale - image_autoencodee)
+            image_erreur_mse = (image_originale - image_autoencodee)**2
+            image_erreur_mae = np.abs(image_originale - image_autoencodee)
+
+        n_col = 5
+        if grad_layer_name is None:
+            n_col = 4
+        subplot_index = (i*n_col)+1
         
-        plt.subplot(3,nb_col, i+1)
+        plt.subplot(nb_images,n_col, subplot_index)
         if (image_originale.ndim == 2) or (image_originale.shape[2] == 1):
             plt.imshow( image_originale, cmap="gray")
         else:
             plt.imshow( image_originale)
         plt.axis('off')
-        plt.title("Original")
+        plt.title(image_label)
+        subplot_index+=1
+
+        if grad_layer_name is not None:
+            plt.subplot(nb_images,n_col, subplot_index)
+            overlay = overlay_heatmap(image_originale, heatmaps[i])
+            plt.imshow( overlay)
+            plt.axis('off')
+            plt.title("Grad-cam")
+            subplot_index+=1
         
-        plt.subplot(3,nb_col, i+1+nb_col)
+        plt.subplot(nb_images,n_col, subplot_index)
         if (image_autoencodee.ndim == 2) or (image_originale.shape[2] == 1):
             plt.imshow( image_autoencodee, cmap="gray")
         else:
             plt.imshow( image_autoencodee)
         plt.axis('off')
         plt.title("Auto-encodé")
+        subplot_index+=1
         
-        plt.subplot(3,nb_col, i+1+nb_col*2)
-        plt.imshow( image_erreur , cmap="hot" , vmin=0, vmax=1)
+        plt.subplot(nb_images,n_col, subplot_index)
+        plt.imshow( image_erreur_mae , cmap="hot" , vmin=0, vmax=1)
         plt.axis('off')
         mae = np.mean(np.abs(image_originale - image_autoencodee))
         mse = np.mean((image_originale - image_autoencodee) ** 2)
 
-        plt.title(f"Erreur\nMAE={mae:.5f}\nMSE={mse:.5f}")
+        plt.title(f"MAE={mae:.5f}")
+        subplot_index+=1
+        
+        plt.subplot(nb_images,n_col, subplot_index)
+        plt.imshow( image_erreur_mse , cmap="hot" , vmin=0, vmax=1)
+        plt.axis('off')
+        mae = np.mean(np.abs(image_originale - image_autoencodee))
+        mse = np.mean((image_originale - image_autoencodee) ** 2)
+
+        plt.title(f"MSE={mse:.5f}")
+        subplot_index+=1
         
     plt.savefig(output_path / output_filename)
 
@@ -157,8 +198,18 @@ def draw_roc_curve(mses, labels, output_path, output_filename="roc_curve.png", c
 
     return roc_auc
 
+def tensor_stats(name, tensor):
+    print(
+        f"{name:25s}",
+        f"shape={tensor.shape}",
+        f"min={tf.reduce_min(tensor).numpy():.3e}",
+        f"max={tf.reduce_max(tensor).numpy():.3e}",
+        f"mean={tf.reduce_mean(tensor).numpy():.3e}",
+        f"abs_mean={tf.reduce_mean(tf.abs(tensor)).numpy():.3e}",
+        f"zeros={tf.reduce_mean(tf.cast(tensor == 0, tf.float32)).numpy():.2%}",
+    )
 
-def make_gradcam_heatmap(img_array, autoencoder, last_conv_layer_name, encoder_model_name="encodeur"):
+def make_gradcam_heatmap(img_array, autoencoder, last_conv_layer_name):
     #encoder = autoencoder.get_layer(encoder_model_name)
     last_conv_layer = autoencoder.get_layer(last_conv_layer_name)
 
@@ -167,31 +218,63 @@ def make_gradcam_heatmap(img_array, autoencoder, last_conv_layer_name, encoder_m
     )
 
     with tf.GradientTape() as tape:
-        conv_output, reconstruction = grad_model(img_array)
+        conv_outputs, reconstructions = grad_model(img_array, training=False)
 
-        loss = tf.reduce_mean(tf.square(img_array - reconstruction))
+        losses = tf.reduce_mean(tf.square(img_array - reconstructions), axis=(1,2,3))
 
-    grads = tape.gradient(loss, conv_output)
-    pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
+    grads = tape.gradient(losses, conv_outputs)
+    if grads is None:
+        raise ValueError(f"Les gradients ne peuvent pas être calculés pour la couche {last_conv_layer_name}'.")
 
-    conv_output = conv_output[0]
-    heatmap = conv_output @ pooled_grads[..., tf.newaxis]
-    heatmap = tf.squeeze(heatmap)
+    pooled_grads = tf.reduce_mean(grads, axis=(1, 2))
+    
+    #heatmap = conv_output @ pooled_grads[..., tf.newaxis]
+    # pour une image devient ça pour un batch :
+    weights = pooled_grads[:, tf.newaxis, tf.newaxis, :]
+    weighted_activations = conv_outputs * weights
+    raw_heatmaps = tf.reduce_sum(
+        weighted_activations,
+        axis=-1
+    )
 
-    heatmap = tf.maximum(heatmap, 0)
-    heatmap /= (tf.math.reduce_max(heatmap) + 1e-8)
+    heatmaps = tf.nn.relu(raw_heatmaps)
 
-    return heatmap.numpy(), reconstruction.numpy()
+    #heatmap /= (tf.math.reduce_max(heatmap) + 1e-8)
+    # pour une image devient ça pour un batch :
+    max_values = tf.reduce_max(
+        heatmaps,
+        axis=(1, 2),
+        keepdims=True
+    )
+    heatmaps = tf.math.divide_no_nan(
+        heatmaps,
+        max_values
+    )
+    if DEBUG:
+        for i in range(len(conv_outputs)):
+            print(f"--- DEBUG image {i} ---")
+            tensor_stats("conv_outputs", conv_outputs[i])
+            tensor_stats("grads", grads[i])
+            tensor_stats("pooled_grads", pooled_grads[i])
+            tensor_stats("raw_heatmaps", raw_heatmaps[i])
+            tensor_stats("heatmaps après ReLU", heatmaps[i])
 
-def overlay_heatmap(image, heatmap, alpha=1):
+    return heatmaps.numpy(), reconstructions.numpy()
+
+def overlay_heatmap(image, heatmap, alpha=0.4):
+    # Conversion TensorFlow vers NumPy si nécessaire
+    if hasattr(image, "numpy"):
+        image = image.numpy()
+    image = np.asarray(image, dtype=np.float32)
+
     heatmap_resized = cv2.resize(heatmap, (image.shape[1], image.shape[0]))
-    heatmap_colored = cv2.applyColorMap(np.uint8(255 * heatmap_resized), cv2.COLORMAP_JET)
-    heatmap_colored = cv2.cvtColor(heatmap_colored, cv2.COLOR_BGR2RGB)
+    #heatmap_colored = cv2.applyColorMap(np.uint8(255 * heatmap_resized), cv2.COLORMAP_JET)
+    heatmap_colored = plt.cm.jet(heatmap_resized)[...,:3].astype(np.float32)
+    #heatmap_colored = cv2.cvtColor(heatmap_colored, cv2.COLOR_BGR2RGB)
 
-    image_uint8 = np.uint8(255 * image) if np.max(image) <= 1 else image.astype(np.uint8)
-    if image_uint8.shape[-1] == 1:
-        image_uint8 = cv2.cvtColor(image_uint8, cv2.COLOR_GRAY2RGB)
+    if image.shape[-1] == 1:
+        image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
 
-    overlay = cv2.addWeighted(image_uint8, 1 - alpha, heatmap_colored, alpha, 0)
+    overlay = cv2.addWeighted(image, 1 - alpha, heatmap_colored, alpha, 0)
 
     return overlay

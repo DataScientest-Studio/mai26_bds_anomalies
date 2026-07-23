@@ -22,6 +22,21 @@ def load_autoencoder(filepath):
             raise
         return load_model(filepath, compile=False, safe_mode=False)
 
+def get_grad_layer_name(model_type):
+    layer_names= {
+        'conv': 'conv2d_3', 
+        'dense_conv': None, #'enc_dense3', 
+        'conv_dense': 'conv2d_3', 
+        'dense': None, #'enc_dense3', 
+        'convtl': 'conv2d_5', 
+        'convtl_dense': 'conv2d_5', 
+    }
+
+    if model_type in layer_names.keys():
+        return layer_names[model_type]
+    else:
+        raise ValueError(f"model {model_type} not valid. Must be in: 'conv', 'dense_conv', 'conv_dense', 'dense', 'convtl', 'convtl_dense")
+
 def get_callbacks(error_score="mae"):
     callbacks=[]
 
@@ -74,6 +89,7 @@ def get_model_dense_conv(resized_dimension, nb_channels):
     x = Dense(
         768, 
         activation="relu", 
+        name="enc_dense4"
     )(x)
     x = Reshape((16,16,3))(x)
 
@@ -522,7 +538,7 @@ def save_history_plot(history, file_name):
     plt.ylabel("Loss")
     plt.savefig(file_name)
 
-def calculate_local_error(batch_images, pred):
+"""def calculate_local_error(batch_images, pred):
     error_map = tf.reduce_mean(
         tf.square(batch_images - pred),
         axis=-1
@@ -531,7 +547,7 @@ def calculate_local_error(batch_images, pred):
 
     score_p99 = tfp.stats.percentile(flat_errors, 99, axis=1)
 
-    return score_p99
+    return score_p99"""
 
 def calculate_errors_labels(model, ds, error_score="mae", errors_threshold=None):
 
