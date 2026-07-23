@@ -29,7 +29,7 @@ def get_grad_layer_name(model_type):
         'conv_dense': 'conv2d_3', 
         'dense': None, #'enc_dense3', 
         'convtl': 'conv2d_5', 
-        'convtl_dense': 'conv2d_5', 
+        'convtl_dense': 'tl_bottleneck', 
     }
 
     if model_type in layer_names.keys():
@@ -473,6 +473,7 @@ def get_model_convtl_dense(resized_dimension, nb_channels, retrain_layers=0):
     encoder = adjust_trainable(encoder, retrain_layers)
 
     x = encoder(encoder_inputs, training=False)
+    x = tf.keras.layers.Activation("linear", name="tl_bottleneck")(x)
 
     # décodeur
     x = Flatten()(x)
