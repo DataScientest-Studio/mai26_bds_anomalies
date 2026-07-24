@@ -1,0 +1,55 @@
+--- Classification report - TOOTHBRUSH - seuil 80% (0.0250680540) ---
+              precision    recall  f1-score   support
+
+           0       0.77      0.83      0.80        12
+           1       0.93      0.90      0.92        30
+
+    accuracy                           0.88        42
+   macro avg       0.85      0.87      0.86        42
+weighted avg       0.88      0.88      0.88        42
+
+
+--- Classification report - TOOTHBRUSH - seuil 85% (0.0255142860) ---
+              precision    recall  f1-score   support
+
+           0       0.59      0.83      0.69        12
+           1       0.92      0.77      0.84        30
+
+    accuracy                           0.79        42
+   macro avg       0.75      0.80      0.76        42
+weighted avg       0.83      0.79      0.79        42
+
+
+--- Classification report - TOOTHBRUSH - seuil 90% (0.0258487053) ---
+              precision    recall  f1-score   support
+
+           0       0.57      1.00      0.73        12
+           1       1.00      0.70      0.82        30
+
+    accuracy                           0.79        42
+   macro avg       0.79      0.85      0.78        42
+weighted avg       0.88      0.79      0.80        42
+
+
+--- Classification report - TOOTHBRUSH - seuil 95% (0.0260713119) ---
+              precision    recall  f1-score   support
+
+           0       0.57      1.00      0.73        12
+           1       1.00      0.70      0.82        30
+
+    accuracy                           0.79        42
+   macro avg       0.79      0.85      0.78        42
+weighted avg       0.88      0.79      0.80        42
+
+
+--- Classification report - TOOTHBRUSH - seuil 99% (0.0262493975) ---
+              precision    recall  f1-score   support
+
+           0       0.55      1.00      0.71        12
+           1       1.00      0.67      0.80        30
+
+    accuracy                           0.76        42
+   macro avg       0.77      0.83      0.75        42
+weighted avg       0.87      0.76      0.77        42
+
+
