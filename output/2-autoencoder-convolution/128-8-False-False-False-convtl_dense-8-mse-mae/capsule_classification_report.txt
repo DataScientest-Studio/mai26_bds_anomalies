@@ -1,0 +1,55 @@
+--- Classification report - CAPSULE - seuil 80% (0.0122424597) ---
+              precision    recall  f1-score   support
+
+           0       0.32      0.65      0.43        23
+           1       0.91      0.71      0.79       109
+
+    accuracy                           0.70       132
+   macro avg       0.61      0.68      0.61       132
+weighted avg       0.80      0.70      0.73       132
+
+
+--- Classification report - CAPSULE - seuil 85% (0.0123364283) ---
+              precision    recall  f1-score   support
+
+           0       0.30      0.65      0.41        23
+           1       0.90      0.68      0.77       109
+
+    accuracy                           0.67       132
+   macro avg       0.60      0.67      0.59       132
+weighted avg       0.80      0.67      0.71       132
+
+
+--- Classification report - CAPSULE - seuil 90% (0.0127345454) ---
+              precision    recall  f1-score   support
+
+           0       0.29      0.70      0.41        23
+           1       0.91      0.63      0.75       109
+
+    accuracy                           0.64       132
+   macro avg       0.60      0.66      0.58       132
+weighted avg       0.80      0.64      0.69       132
+
+
+--- Classification report - CAPSULE - seuil 95% (0.0140833734) ---
+              precision    recall  f1-score   support
+
+           0       0.24      0.83      0.37        23
+           1       0.92      0.44      0.60       109
+
+    accuracy                           0.51       132
+   macro avg       0.58      0.63      0.48       132
+weighted avg       0.80      0.51      0.56       132
+
+
+--- Classification report - CAPSULE - seuil 99% (0.0164642669) ---
+              precision    recall  f1-score   support
+
+           0       0.22      0.91      0.35        23
+           1       0.94      0.31      0.47       109
+
+    accuracy                           0.42       132
+   macro avg       0.58      0.61      0.41       132
+weighted avg       0.82      0.42      0.45       132
+
+

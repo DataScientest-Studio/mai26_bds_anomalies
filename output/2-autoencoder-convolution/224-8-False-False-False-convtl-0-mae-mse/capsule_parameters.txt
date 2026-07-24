@@ -1,0 +1,13 @@
+###################################################
+### Paramètres utilisés - catégorie capsule     ###
+###################################################
+Date : 2026-07-23 22:16:31
+resized_dimension  = (224, 224)
+batch_size         = 8
+grayscale          = False
+color_augmentation = False
+move_augmentation  = False
+model_type         = convtl
+retrain_layers     = 0
+loss               = mae
+error_score        = mse
