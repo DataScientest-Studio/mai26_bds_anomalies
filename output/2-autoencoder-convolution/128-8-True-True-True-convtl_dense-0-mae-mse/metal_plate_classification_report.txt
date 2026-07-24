@@ -1,0 +1,55 @@
+--- Classification report - METAL_PLATE - seuil 80% (0.0110159172) ---
+              precision    recall  f1-score   support
+
+           0       0.13      0.89      0.22        73
+           1       0.99      0.63      0.77      1228
+
+    accuracy                           0.65      1301
+   macro avg       0.56      0.76      0.50      1301
+weighted avg       0.94      0.65      0.74      1301
+
+
+--- Classification report - METAL_PLATE - seuil 85% (0.0118647581) ---
+              precision    recall  f1-score   support
+
+           0       0.12      0.90      0.21        73
+           1       0.99      0.61      0.75      1228
+
+    accuracy                           0.62      1301
+   macro avg       0.56      0.76      0.48      1301
+weighted avg       0.94      0.62      0.72      1301
+
+
+--- Classification report - METAL_PLATE - seuil 90% (0.0136126298) ---
+              precision    recall  f1-score   support
+
+           0       0.11      0.92      0.19        73
+           1       0.99      0.55      0.71      1228
+
+    accuracy                           0.57      1301
+   macro avg       0.55      0.74      0.45      1301
+weighted avg       0.94      0.57      0.68      1301
+
+
+--- Classification report - METAL_PLATE - seuil 95% (0.0205058921) ---
+              precision    recall  f1-score   support
+
+           0       0.09      0.97      0.16        73
+           1       1.00      0.40      0.57      1228
+
+    accuracy                           0.43      1301
+   macro avg       0.54      0.69      0.36      1301
+weighted avg       0.94      0.43      0.55      1301
+
+
+--- Classification report - METAL_PLATE - seuil 99% (0.0237349924) ---
+              precision    recall  f1-score   support
+
+           0       0.08      0.97      0.15        73
+           1       1.00      0.35      0.51      1228
+
+    accuracy                           0.38      1301
+   macro avg       0.54      0.66      0.33      1301
+weighted avg       0.94      0.38      0.49      1301
+
+

@@ -24,9 +24,9 @@ def load_autoencoder(filepath):
 
 def get_grad_layer_name(model_type):
     layer_names= {
-        'conv': 'conv2d_3', 
+        'conv': 'conv2d_2', 
         'dense_conv': None, #'enc_dense3', 
-        'conv_dense': 'conv2d_3', 
+        'conv_dense': 'conv2d_2', 
         'dense': None, #'enc_dense3', 
         'convtl': 'conv2d_5', 
         'convtl_dense': 'tl_bottleneck', 

@@ -6,7 +6,7 @@ load_dotenv()
 image_path = Path(os.getenv("PATH_DATASET"))
 csv_file = Path(__file__).parent.parent / 'image_list_clean.csv'
 
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, WeightedRandomSampler
 import pandas as pd
 import numpy as np
 from PIL import Image
@@ -50,7 +50,7 @@ df['image_path'] = df.apply(
 
 class AnomalyDataset( Dataset ):
     def __init__(self, category, train=True, binary=False, transform = None, df=df):
-        df = df[(df['category'] == category) & (df["train"]==train)]
+        df = df[(df['category'] == category) & (df["train"]==train)].reset_index(drop=True)
         self.X = df.drop(['quality'], axis=1)
 
         self.binary=binary
@@ -61,11 +61,12 @@ class AnomalyDataset( Dataset ):
             self.y = df['quality']
             self.classes = sorted(df["quality"].unique())
         self.class_to_idx = {name: idx for idx, name in enumerate(self.classes)}
+        self.targets = np.array([self._label_to_idx(label) for label in self.y])
 
         self.transform = transform
 
     def __getitem__(self, idx):
-        img = Image.open( self.X.iloc[idx]['image_path'] )
+        img = Image.open( self.X.iloc[idx]['image_path'] ).convert("RGB")
 
         if self.transform is not None:
             img = self.transform(img)
@@ -79,3 +80,24 @@ class AnomalyDataset( Dataset ):
 
     def __len__(self):
         return len(self.X)
+
+    def _label_to_idx(self, label):
+        if self.binary:
+            return int(label)
+        return self.class_to_idx[label]
+
+    def class_counts(self):
+        counts = np.bincount(self.targets, minlength=len(self.classes))
+        return dict(zip(self.classes, counts))
+
+    def make_weighted_sampler(self):
+        """Ré-échantillonne les classes rares sans dupliquer les fichiers."""
+        class_counts = np.bincount(self.targets, minlength=len(self.classes))
+        class_weights = 1.0 / np.maximum(class_counts, 1)
+        sample_weights = class_weights[self.targets]
+
+        return WeightedRandomSampler(
+            weights=sample_weights,
+            num_samples=len(sample_weights),
+            replacement=True,
+        )

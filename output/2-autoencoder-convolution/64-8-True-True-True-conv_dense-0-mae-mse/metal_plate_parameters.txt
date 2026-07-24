@@ -1,0 +1,13 @@
+###################################################
+### Paramètres utilisés - catégorie metal_plate ###
+###################################################
+Date : 2026-07-24 17:34:01
+resized_dimension  = (64, 64)
+batch_size         = 8
+grayscale          = True
+color_augmentation = True
+move_augmentation  = True
+model_type         = conv_dense
+retrain_layers     = 0
+loss               = mae
+error_score        = mse

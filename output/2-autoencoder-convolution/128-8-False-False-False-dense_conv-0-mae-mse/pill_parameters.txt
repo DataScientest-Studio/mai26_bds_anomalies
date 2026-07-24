@@ -1,0 +1,13 @@
+###################################################
+### Paramètres utilisés - catégorie pill        ###
+###################################################
+Date : 2026-07-24 17:45:51
+resized_dimension  = (128, 128)
+batch_size         = 8
+grayscale          = False
+color_augmentation = False
+move_augmentation  = False
+model_type         = dense_conv
+retrain_layers     = 0
+loss               = mae
+error_score        = mse

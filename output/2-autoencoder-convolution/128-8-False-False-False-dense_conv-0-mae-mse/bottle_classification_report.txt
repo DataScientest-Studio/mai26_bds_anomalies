@@ -1,0 +1,55 @@
+--- Classification report - BOTTLE - seuil 80% (0.0026684159) ---
+              precision    recall  f1-score   support
+
+           0       0.22      0.40      0.28        20
+           1       0.95      0.90      0.92       278
+
+    accuracy                           0.86       298
+   macro avg       0.59      0.65      0.60       298
+weighted avg       0.90      0.86      0.88       298
+
+
+--- Classification report - BOTTLE - seuil 85% (0.0028172394) ---
+              precision    recall  f1-score   support
+
+           0       0.29      0.65      0.40        20
+           1       0.97      0.88      0.93       278
+
+    accuracy                           0.87       298
+   macro avg       0.63      0.77      0.66       298
+weighted avg       0.93      0.87      0.89       298
+
+
+--- Classification report - BOTTLE - seuil 90% (0.0029163873) ---
+              precision    recall  f1-score   support
+
+           0       0.29      0.70      0.41        20
+           1       0.98      0.88      0.92       278
+
+    accuracy                           0.87       298
+   macro avg       0.63      0.79      0.67       298
+weighted avg       0.93      0.87      0.89       298
+
+
+--- Classification report - BOTTLE - seuil 95% (0.0031507507) ---
+              precision    recall  f1-score   support
+
+           0       0.25      0.80      0.38        20
+           1       0.98      0.83      0.90       278
+
+    accuracy                           0.83       298
+   macro avg       0.62      0.81      0.64       298
+weighted avg       0.93      0.83      0.86       298
+
+
+--- Classification report - BOTTLE - seuil 99% (0.0037257655) ---
+              precision    recall  f1-score   support
+
+           0       0.20      0.95      0.34        20
+           1       1.00      0.73      0.84       278
+
+    accuracy                           0.75       298
+   macro avg       0.60      0.84      0.59       298
+weighted avg       0.94      0.75      0.81       298
+
+
