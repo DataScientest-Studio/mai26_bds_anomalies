@@ -87,17 +87,17 @@ if not os.path.exists(parent_output_path):
 #categories = ['bottle', 'cable', 'capsule', 'carpet', 'grid',
 #    'hazelnut', 'leather', 'metal_nut', 'pill', 'screw', 'screw_preprocessed',
 #    'tile', 'toothbrush', 'transistor', 'wood', 'zipper', 'metal_plate']
-categories = ['capsule']
+categories = ['cable']
 
-resized_dimension = (224,224)
-batch_size = 4
+resized_dimension = (128,128)
+batch_size = 16
 
-grayscale = True
+grayscale = False
 color_augmentation=False
 move_augmentation=False
 
-model_type = 'convtl_dense' # 'conv', 'dense_conv', 'conv_dense', 'dense', 'convtl', 'convtl_dense'
-retrain_layers = 8 # en cas de transfer learning, indique le type et la profondeur du fine-tuning :
+model_type = 'convtl' # 'conv', 'dense_conv', 'conv_dense', 'dense', 'convtl', 'convtl_dense'
+retrain_layers = 0 # en cas de transfer learning, indique le type et la profondeur du fine-tuning :
 # 0 : feature extraction uniquement, on ne ré-entraine pas le modèle
 # 1 à n : fine-tuning partiel, on fine-tune les n dernières couches du modèle
 # -1 : fine-tuning total
@@ -269,7 +269,7 @@ for category in categories:
     test_ds = test_ds.map(
         lambda x, y: (
             data_augmenter.normalize(x), 
-            tf.cast(y != good_value, tf.int32) 
+            y
         )
     ).prefetch(AUTOTUNE)
 
@@ -283,7 +283,9 @@ for category in categories:
     print("Threshold Error (val) =", error_threshold)
 
     # Calcul des MSEs sur le test (avec le label 0 si good, 1 si anomalie)
-    test_errors, y_true, y_pred = calculate_errors_labels(autoencoder, test_ds, error_score=error_score, errors_threshold=error_threshold)
+    test_errors, y_true, y_pred = calculate_errors_labels(autoencoder, test_ds, 
+                                                          error_score=error_score, errors_threshold=error_threshold, 
+                                                          good_value=good_value)
 
     ##################
     # Visualisations #

@@ -550,7 +550,7 @@ def save_history_plot(history, file_name):
 
     return score_p99"""
 
-def calculate_errors_labels(model, ds, error_score="mae", errors_threshold=None):
+def calculate_errors_labels(model, ds, error_score="mae", errors_threshold=None, good_value=0):
 
     errors = []
     true_labels = []
@@ -576,7 +576,9 @@ def calculate_errors_labels(model, ds, error_score="mae", errors_threshold=None)
         if errors_threshold is not None:
             pred_labels.extend( (batch_errors > errors_threshold).numpy().astype(int) )
 
-        true_labels.extend(batch_labels.numpy())
+        batch_labels = batch_labels.numpy()
+        batch_labels = (batch_labels!=good_value).astype(int)
+        true_labels.extend(batch_labels)
 
     if errors_threshold is None:
         return errors, true_labels
