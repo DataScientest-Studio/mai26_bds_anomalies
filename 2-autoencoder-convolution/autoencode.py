@@ -70,6 +70,7 @@ def detect_nb_couleurs(ds):
     
 def augment_autoencoder(data_augmenter, x):
     x_modified = data_augmenter.augment(x)
+    print(f"AUGMENTATION ({data_augmenter.transform}) : type={type(x_modified)}, shape={x_modified.shape}")
     return (x_modified, x_modified)
 
 ### SCRIPT PRINCIPAL ###
@@ -88,20 +89,20 @@ if not os.path.exists(parent_output_path):
 #    'tile', 'toothbrush', 'transistor', 'wood', 'zipper', 'metal_plate']
 categories = ['capsule']
 
-resized_dimension = (128,128)
-batch_size = 8
+resized_dimension = (224,224)
+batch_size = 4
 
 grayscale = True
 color_augmentation=False
 move_augmentation=False
 
-model_type = 'dense' # 'conv', 'dense_conv', 'conv_dense', 'dense', 'convtl', 'convtl_dense'
-retrain_layers = 0 # en cas de transfer learning, indique le type et la profondeur du fine-tuning :
+model_type = 'convtl_dense' # 'conv', 'dense_conv', 'conv_dense', 'dense', 'convtl', 'convtl_dense'
+retrain_layers = 8 # en cas de transfer learning, indique le type et la profondeur du fine-tuning :
 # 0 : feature extraction uniquement, on ne ré-entraine pas le modèle
 # 1 à n : fine-tuning partiel, on fine-tune les n dernières couches du modèle
 # -1 : fine-tuning total
-loss = 'mae' # 'mae', 'mse'
-error_score = 'mse' # 'mae', 'mse'
+loss = 'mse' # 'mae', 'mse'
+error_score = 'mae' # 'mae', 'mse'
 
 threshold_percentile = 80
 
@@ -287,6 +288,8 @@ for category in categories:
     ##################
     # Visualisations #
     ##################
+
+    print(f"Preparing visualisations for {category} in directory {parameters_to_dirname()}")
 
     # Visualisation des images originales reconstruites
     fig.compare_orig_encoded(trainf_ds, autoencoder, output_path, f"{category}_images_reconstruites_train_good.png", grad_layer_name=grad_layer_name)

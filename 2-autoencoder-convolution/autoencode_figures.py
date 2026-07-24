@@ -48,6 +48,7 @@ def compare_orig_encoded(image_dataset, model, output_path, output_filename="ima
             if len(orig_images) >= nb_classes:
                 break
         orig_images = tf.stack(orig_images, axis=0)
+        orig_labels = np.array(orig_labels)
 
     if grad_layer_name is None or grad_layer_name == "":
         encoded_images = model.predict(orig_images)
@@ -61,7 +62,11 @@ def compare_orig_encoded(image_dataset, model, output_path, output_filename="ima
         
         image_originale = orig_images[i]
         image_autoencodee = encoded_images[i]
-        image_label = class_names[orig_labels[i]]
+
+        if orig_labels.ndim == 1:
+            image_label = class_names[orig_labels[i]]
+        else:
+            image_label = 'good'
 
         if image_originale.ndim == 3 and image_originale.shape[2] > 1:
             image_erreur_mse = np.mean((image_originale - image_autoencodee)**2, axis=2)
@@ -152,7 +157,7 @@ def histogramme_erreurs(train_mses,
     plt.title(f'Histogramme des erreurs - {category}')
 
     # Définition d'une limite pour détecter les anomalies (par exemple, le 95ème percentile des erreurs sur les images d'entraînement)
-    plt.axvline(threshold, color='red', linestyle='dashed', linewidth=2, label=f'Seuil (95ème percentile) = {threshold:.5f}')
+    plt.axvline(threshold, color='red', linestyle='dashed', linewidth=2, label=f'Seuil = {threshold:.5f}')
 
     
     plt.legend()

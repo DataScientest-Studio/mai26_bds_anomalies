@@ -16,8 +16,8 @@ class DataAugmentation(Sequential):
         # Transformations des images
         if colors:
             colors_sequence=[
-                RandomBrightness(0.001, value_range=[0.0, 1.0]), 
-                RandomContrast(0.001, value_range=[0.0, 1.0]), 
+                RandomBrightness(0.05, value_range=[0.0, 1.0]), 
+                RandomContrast(0.05, value_range=[0.0, 1.0]), 
             ]
             s.extend(colors_sequence)
             self.transform=True
