@@ -21,10 +21,34 @@ def logging_function(function):
         return result
     return printing
 
+def move_good_to_start(class_names, orig_images, orig_labels):
+    """Retourne les tableaux orig_images et orig_labels avec en premier l'image correspondant à good s'il y en a au moins une.
+    Sinon les tableaux sont retournés sans modification."""
+    # Recherche de la valeur 
+    try: 
+        good_label = class_names.index("good")
+    except Exception:
+        return orig_images, orig_labels
+
+    good_indices = np.where(orig_labels == good_label)[0]
+    if len(good_indices) > 0:
+        good_index = good_indices[0]  # première occurrence de "good"
+
+        # Nouvel ordre : good_index en premier, puis tous les autres
+        new_order = np.concatenate([
+            [good_index],
+            np.delete(np.arange(len(orig_labels)), good_index),
+        ])
+
+        orig_labels = orig_labels[new_order]
+        orig_images = tf.gather(orig_images, new_order)
+
+    return orig_images, orig_labels
+
 # Visualisation des images reconstruites
 @logging_function
 def compare_orig_encoded(image_dataset, model, output_path, output_filename="images_reconstruites_train_good.png", 
-                         grad_layer_name=None, nb_min_images=5, all_classes=False, class_names={0:"good"}):
+                         grad_layer_name=None, nb_min_images=5, all_classes=False, class_names=["good"]):
     """ Affiche les num_images premières images originales, leur grad-cam, leur version auto-encodées et leurs différences (MSE).
     Si only_label est défini, on n'affichera que des images qui ont ce label.
     """
@@ -49,6 +73,7 @@ def compare_orig_encoded(image_dataset, model, output_path, output_filename="ima
                 break
         orig_images = tf.stack(orig_images, axis=0)
         orig_labels = np.array(orig_labels)
+        orig_images, orig_labels = move_good_to_start(class_names, orig_images, orig_labels)
 
     if grad_layer_name is None or grad_layer_name == "":
         encoded_images = model.predict(orig_images)
