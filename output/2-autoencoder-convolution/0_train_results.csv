@@ -324,3 +324,8 @@ date,category,resized_dimension,batch_size,grayscale,color_augmentation,move_aug
 2026-07-24 18:16:43,leather,"(128, 128)","8","False","False","False","convtl_dense","6","mse","mae",0.9096467391304348,1.0,1.0
 2026-07-24 18:19:06,leather,"(128, 128)","8","False","False","False","convtl_dense","2","mse","mae",0.9293478260869564,1.0,1.0
 2026-07-24 18:20:51,leather,"(128, 128)","8","False","False","False","convtl_dense","4","mae","mse",0.9218750000000001,1.0,1.0
+2026-07-27 15:52:18,leather,"(128, 128)","8","False","False","False","vae_transfer","0","mae","mse",0.5227581521739131,0.9891304347826086,1.0
+2026-07-27 15:56:46,leather,"(128, 128)","8","False","False","False","vae_transfer","0","mae","mse",0.5050951086956522,0.9891304347826086,1.0
+2026-07-27 15:58:01,metal_plate,"(128, 128)","8","False","False","False","vae_transfer","0","mae","mse",0.7344049796974701,0.3990228013029316,0.0821917808219178
+2026-07-27 16:00:06,metal_plate,"(64, 64)","32","False","False","False","vae_transfer","0","mae","mse",0.8162955691401543,0.38762214983713356,0.0684931506849315
+2026-07-27 16:01:38,metal_plate,"(64, 64)","32","False","False","False","vae_transfer","0","mse","mae",0.5921310963366204,0.6066775244299675,0.4794520547945205

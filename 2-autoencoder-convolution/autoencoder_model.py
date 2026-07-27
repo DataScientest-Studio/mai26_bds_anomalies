@@ -12,6 +12,8 @@ import tensorflow_probability as tfp
 
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 
+import vae_transfer_model as vae
+
 transfer_learning=None
 
 def load_autoencoder(filepath):
@@ -30,12 +32,13 @@ def get_grad_layer_name(model_type):
         'dense': None, #'enc_dense3', 
         'convtl': 'conv2d_5', 
         'convtl_dense': 'tl_bottleneck', 
+        'vae_transfer': 'enc_conv2',
     }
 
     if model_type in layer_names.keys():
         return layer_names[model_type]
     else:
-        raise ValueError(f"model {model_type} not valid. Must be in: 'conv', 'dense_conv', 'conv_dense', 'dense', 'convtl', 'convtl_dense")
+        raise ValueError(f"model {model_type} not valid. Must be in: 'conv', 'dense_conv', 'conv_dense', 'dense', 'convtl', 'convtl_dense', 'vae_transfer'")
 
 def get_callbacks(error_score="mae"):
     callbacks=[]
@@ -511,8 +514,10 @@ def create_model(model = "conv", loss="mse", error_score="mae", resized_dimensio
         inputs, outputs = get_model_convtl(resized_dimension, nb_channels, retrain_layers)
     elif model=="convtl_dense":
         inputs, outputs = get_model_convtl_dense(resized_dimension, nb_channels, retrain_layers)
+    elif model=="vae_transfer":
+        inputs, outputs = vae.get_vae_transfer(resized_dimension=resized_dimension, nb_channels=nb_channels)
     else:
-        raise ValueError(f"model {model} not valid. Must be in: 'conv', 'dense_conv', 'conv_dense', 'dense', 'convtl', 'convtl_dense")
+        raise ValueError(f"model {model} not valid. Must be in: 'conv', 'dense_conv', 'conv_dense', 'dense', 'convtl', 'convtl_dense', 'vae_transfer'")
 
     # auto-encodeur
     autoencoder = Model(inputs = inputs, outputs = outputs, name="auto_encodeur")
