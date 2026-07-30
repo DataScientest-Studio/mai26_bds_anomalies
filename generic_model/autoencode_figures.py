@@ -308,3 +308,85 @@ def overlay_heatmap(image, heatmap, alpha=0.4):
     overlay = cv2.addWeighted(image, 1 - alpha, heatmap_colored, alpha, 0)
 
     return overlay
+
+
+# Visualisation des images reconstruites
+@logging_function
+def plot_image_comparison(orig_images, orig_labels, model, grad_layer_name=None):
+    """ Affiche les num_images premières images originales, leur grad-cam, leur version auto-encodées et leurs différences (MSE).
+    """
+
+    if grad_layer_name is None or grad_layer_name == "":
+        encoded_images = model.predict(orig_images)
+        grad_layer_name = None
+    else:
+        heatmaps, encoded_images = make_gradcam_heatmap(orig_images, model, last_conv_layer_name=grad_layer_name)
+
+    nb_images = len(orig_images)
+    fig = plt.figure(figsize=(14,3*nb_images))
+    for i, image_originale in enumerate(orig_images):
+        
+        image_autoencodee = encoded_images[i]
+
+        if orig_labels is not None:
+            image_label = orig_labels[i]
+        else:
+            image_label = ''
+
+        if image_originale.ndim == 3 and image_originale.shape[2] > 1:
+            image_erreur_mse = np.mean((image_originale - image_autoencodee)**2, axis=2)
+            image_erreur_mae = np.abs(image_originale - image_autoencodee).mean(axis=2)
+        else:
+            image_erreur_mse = (image_originale - image_autoencodee)**2
+            image_erreur_mae = np.abs(image_originale - image_autoencodee)
+
+        n_col = 5
+        if grad_layer_name is None:
+            n_col = 4
+        subplot_index = (i*n_col)+1
+        
+        plt.subplot(nb_images,n_col, subplot_index)
+        if (image_originale.ndim == 2) or (image_originale.shape[2] == 1):
+            plt.imshow( image_originale, cmap="gray")
+        else:
+            plt.imshow( image_originale)
+        plt.axis('off')
+        plt.title(image_label)
+        subplot_index+=1
+
+        if grad_layer_name is not None:
+            plt.subplot(nb_images,n_col, subplot_index)
+            overlay = overlay_heatmap(image_originale, heatmaps[i])
+            plt.imshow( overlay)
+            plt.axis('off')
+            plt.title("Grad-cam")
+            subplot_index+=1
+        
+        plt.subplot(nb_images,n_col, subplot_index)
+        if (image_autoencodee.ndim == 2) or (image_originale.shape[2] == 1):
+            plt.imshow( image_autoencodee, cmap="gray")
+        else:
+            plt.imshow( image_autoencodee)
+        plt.axis('off')
+        plt.title("Auto-encodé")
+        subplot_index+=1
+        
+        plt.subplot(nb_images,n_col, subplot_index)
+        plt.imshow( image_erreur_mae , cmap="hot" , vmin=0, vmax=1)
+        plt.axis('off')
+        mae = np.mean(np.abs(image_originale - image_autoencodee))
+        mse = np.mean((image_originale - image_autoencodee) ** 2)
+
+        plt.title(f"MAE={mae:.5f}")
+        subplot_index+=1
+        
+        plt.subplot(nb_images,n_col, subplot_index)
+        plt.imshow( image_erreur_mse , cmap="hot" , vmin=0, vmax=1)
+        plt.axis('off')
+        mae = np.mean(np.abs(image_originale - image_autoencodee))
+        mse = np.mean((image_originale - image_autoencodee) ** 2)
+
+        plt.title(f"MSE={mse:.5f}")
+        subplot_index+=1
+        
+    return fig

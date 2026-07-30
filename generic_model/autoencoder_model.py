@@ -12,7 +12,7 @@ import tensorflow_probability as tfp
 
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 
-import vae_transfer_model as vae
+from . import vae_transfer_model as vae
 
 transfer_learning=None
 
@@ -497,10 +497,11 @@ def get_model_convtl_dense(resized_dimension, nb_channels, retrain_layers=0):
 def create_model(model = "conv", loss="mse", error_score="mae", resized_dimension=(256,256), nb_channels=3, retrain_layers=0):
 
     valid_scores=['mae', 'mse']
+    valid_scores_str = "', '".join(valid_scores)
     if loss not in valid_scores:
-        raise ValueError(f"loss {loss} not valid. Must be in: '{'\', \''.join(valid_scores)}'")
+        raise ValueError(f"loss {loss} not valid. Must be in: '{valid_scores_str}'")
     if error_score not in valid_scores:
-        raise ValueError(f"error_score {error_score} not valid. Must be in: '{'\', \''.join(valid_scores)}'")
+        raise ValueError(f"error_score {error_score} not valid. Must be in: '{valid_scores_str}'")
 
     if model=="conv":
         inputs, outputs = get_model_conv(resized_dimension, nb_channels)
