@@ -12,7 +12,10 @@ import tensorflow_probability as tfp
 
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 
-from . import vae_transfer_model as vae
+try:
+    from . import vae_transfer_model as vae
+except ImportError:
+    import vae_transfer_model as vae
 
 transfer_learning=None
 
