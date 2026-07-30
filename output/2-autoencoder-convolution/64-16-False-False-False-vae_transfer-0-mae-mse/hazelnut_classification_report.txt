@@ -1,0 +1,55 @@
+--- Classification report - HAZELNUT - seuil 80% (0.0024892644) ---
+              precision    recall  f1-score   support
+
+           0       0.46      0.93      0.62        40
+           1       0.90      0.39      0.54        70
+
+    accuracy                           0.58       110
+   macro avg       0.68      0.66      0.58       110
+weighted avg       0.74      0.58      0.57       110
+
+
+--- Classification report - HAZELNUT - seuil 85% (0.0027261029) ---
+              precision    recall  f1-score   support
+
+           0       0.46      0.97      0.63        40
+           1       0.96      0.36      0.52        70
+
+    accuracy                           0.58       110
+   macro avg       0.71      0.67      0.57       110
+weighted avg       0.78      0.58      0.56       110
+
+
+--- Classification report - HAZELNUT - seuil 90% (0.0029933336) ---
+              precision    recall  f1-score   support
+
+           0       0.46      1.00      0.63        40
+           1       1.00      0.33      0.49        70
+
+    accuracy                           0.57       110
+   macro avg       0.73      0.66      0.56       110
+weighted avg       0.80      0.57      0.54       110
+
+
+--- Classification report - HAZELNUT - seuil 95% (0.0036118608) ---
+              precision    recall  f1-score   support
+
+           0       0.44      1.00      0.62        40
+           1       1.00      0.29      0.44        70
+
+    accuracy                           0.55       110
+   macro avg       0.72      0.64      0.53       110
+weighted avg       0.80      0.55      0.51       110
+
+
+--- Classification report - HAZELNUT - seuil 99% (0.0041649551) ---
+              precision    recall  f1-score   support
+
+           0       0.43      1.00      0.61        40
+           1       1.00      0.26      0.41        70
+
+    accuracy                           0.53       110
+   macro avg       0.72      0.63      0.51       110
+weighted avg       0.79      0.53      0.48       110
+
+

@@ -1,0 +1,55 @@
+--- Classification report - SCREW_PREPROCESSED - seuil 80% (0.0018343115) ---
+              precision    recall  f1-score   support
+
+           0       0.01      0.02      0.01        41
+           1       0.26      0.12      0.16       119
+
+    accuracy                           0.09       160
+   macro avg       0.13      0.07      0.09       160
+weighted avg       0.20      0.09      0.12       160
+
+
+--- Classification report - SCREW_PREPROCESSED - seuil 85% (0.0019014197) ---
+              precision    recall  f1-score   support
+
+           0       0.01      0.02      0.01        41
+           1       0.25      0.11      0.15       119
+
+    accuracy                           0.09       160
+   macro avg       0.13      0.07      0.08       160
+weighted avg       0.18      0.09      0.12       160
+
+
+--- Classification report - SCREW_PREPROCESSED - seuil 90% (0.0020932516) ---
+              precision    recall  f1-score   support
+
+           0       0.03      0.07      0.04        41
+           1       0.17      0.07      0.10       119
+
+    accuracy                           0.07       160
+   macro avg       0.10      0.07      0.07       160
+weighted avg       0.14      0.07      0.08       160
+
+
+--- Classification report - SCREW_PREPROCESSED - seuil 95% (0.0024941543) ---
+              precision    recall  f1-score   support
+
+           0       0.06      0.20      0.10        41
+           1       0.03      0.01      0.01       119
+
+    accuracy                           0.06       160
+   macro avg       0.05      0.10      0.05       160
+weighted avg       0.04      0.06      0.03       160
+
+
+--- Classification report - SCREW_PREPROCESSED - seuil 99% (0.0027822650) ---
+              precision    recall  f1-score   support
+
+           0       0.15      0.51      0.23        41
+           1       0.00      0.00      0.00       119
+
+    accuracy                           0.13       160
+   macro avg       0.07      0.26      0.12       160
+weighted avg       0.04      0.13      0.06       160
+
+

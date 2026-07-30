@@ -1,55 +1,55 @@
---- Classification report - METAL_PLATE - seuil 80% (0.0074424893) ---
+--- Classification report - METAL_PLATE - seuil 80% (0.0074892687) ---
               precision    recall  f1-score   support
 
-           0       0.08      0.93      0.15        73
-           1       0.99      0.39      0.56      1228
+           0       0.08      0.90      0.14        73
+           1       0.98      0.36      0.53      1228
 
-    accuracy                           0.42      1301
-   macro avg       0.54      0.66      0.35      1301
-weighted avg       0.94      0.42      0.53      1301
+    accuracy                           0.39      1301
+   macro avg       0.53      0.63      0.34      1301
+weighted avg       0.93      0.39      0.51      1301
 
 
---- Classification report - METAL_PLATE - seuil 85% (0.0092510628) ---
+--- Classification report - METAL_PLATE - seuil 85% (0.0094647249) ---
               precision    recall  f1-score   support
 
-           0       0.07      0.97      0.14        73
-           1       0.99      0.26      0.42      1228
+           0       0.07      0.95      0.13        73
+           1       0.99      0.25      0.40      1228
 
-    accuracy                           0.30      1301
-   macro avg       0.53      0.62      0.28      1301
-weighted avg       0.94      0.30      0.40      1301
+    accuracy                           0.29      1301
+   macro avg       0.53      0.60      0.27      1301
+weighted avg       0.94      0.29      0.39      1301
 
 
---- Classification report - METAL_PLATE - seuil 90% (0.0100936703) ---
+--- Classification report - METAL_PLATE - seuil 90% (0.0109621268) ---
               precision    recall  f1-score   support
 
-           0       0.07      0.97      0.13        73
-           1       0.99      0.23      0.37      1228
+           0       0.07      0.99      0.13        73
+           1       1.00      0.19      0.32      1228
 
-    accuracy                           0.27      1301
-   macro avg       0.53      0.60      0.25      1301
-weighted avg       0.94      0.27      0.36      1301
-
-
---- Classification report - METAL_PLATE - seuil 95% (0.0171664860) ---
-              precision    recall  f1-score   support
-
-           0       0.06      1.00      0.11        73
-           1       1.00      0.07      0.14      1228
-
-    accuracy                           0.13      1301
-   macro avg       0.53      0.54      0.13      1301
-weighted avg       0.95      0.13      0.14      1301
+    accuracy                           0.24      1301
+   macro avg       0.53      0.59      0.22      1301
+weighted avg       0.94      0.24      0.31      1301
 
 
---- Classification report - METAL_PLATE - seuil 99% (0.0228182990) ---
+--- Classification report - METAL_PLATE - seuil 95% (0.0287713427) ---
               precision    recall  f1-score   support
 
            0       0.06      1.00      0.11        73
-           1       1.00      0.04      0.07      1228
+           1       1.00      0.03      0.06      1228
 
     accuracy                           0.09      1301
    macro avg       0.53      0.52      0.09      1301
 weighted avg       0.95      0.09      0.07      1301
+
+
+--- Classification report - METAL_PLATE - seuil 99% (0.0386270769) ---
+              precision    recall  f1-score   support
+
+           0       0.06      1.00      0.11        73
+           1       1.00      0.02      0.04      1228
+
+    accuracy                           0.08      1301
+   macro avg       0.53      0.51      0.07      1301
+weighted avg       0.95      0.08      0.04      1301
 
 

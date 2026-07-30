@@ -156,7 +156,7 @@ def get_vae_transfer(resized_dimension=(128,128), nb_channels=1, kl_weight=0.1, 
     z_log_var = layers.Dense(latent_space, activation="linear", name="z_log_var")(x)
     z = Sampling(name="bottleneck")([z_mean, z_log_var])
 
-    #KLLossLayer(kl_weight=kl_weight, name="kl_loss_layer")([z_mean, z_log_var])
+    KLLossLayer(kl_weight=kl_weight, name="kl_loss_layer")([z_mean, z_log_var])
 
     #encoder = Model(encoder_input, [z_mean, z_log_var, z], name="encodeur")
 
@@ -179,7 +179,7 @@ def get_vae_transfer(resized_dimension=(128,128), nb_channels=1, kl_weight=0.1, 
     )(x)
 
     # perte perceptuelle (VGG16), ajoutée en plus du MSE et de la perte KL
-    #PerceptualLossLayer(weight=perceptual_weight, name="perceptual_loss_layer")([encoder_input, autoencoder_output])
+    PerceptualLossLayer(weight=perceptual_weight, name="perceptual_loss_layer")([encoder_input, autoencoder_output])
 
     return encoder_input, autoencoder_output
 

@@ -87,7 +87,7 @@ if not os.path.exists(parent_output_path):
 #categories = ['bottle', 'cable', 'capsule', 'carpet', 'grid',
 #    'hazelnut', 'leather', 'metal_nut', 'pill', 'screw', 'screw_preprocessed',
 #    'tile', 'toothbrush', 'transistor', 'wood', 'zipper', 'metal_plate']
-categories = ['metal_plate']
+categories = ['wood', 'zipper', 'metal_plate']
 
 resized_dimension = (64,64)
 batch_size = 32
@@ -101,8 +101,8 @@ retrain_layers = 0 # en cas de transfer learning, indique le type et la profonde
 # 0 : feature extraction uniquement, on ne ré-entraine pas le modèle
 # 1 à n : fine-tuning partiel, on fine-tune les n dernières couches du modèle
 # -1 : fine-tuning total
-loss = 'mse' # 'mae', 'mse'
-error_score = 'mae' # 'mae', 'mse'
+loss = 'mae' # 'mae', 'mse'
+error_score = 'mse' # 'mae', 'mse'
 
 threshold_percentile = 80
 

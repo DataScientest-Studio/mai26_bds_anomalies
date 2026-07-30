@@ -1,7 +1,7 @@
 ###################################################
 ### Paramètres utilisés - catégorie metal_plate ###
 ###################################################
-Date : 2026-07-27 15:59:30
+Date : 2026-07-30 09:46:08
 resized_dimension  = (64, 64)
 batch_size         = 32
 grayscale          = False

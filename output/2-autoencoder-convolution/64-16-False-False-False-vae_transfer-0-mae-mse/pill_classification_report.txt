@@ -1,0 +1,55 @@
+--- Classification report - PILL - seuil 80% (0.0010901336) ---
+              precision    recall  f1-score   support
+
+           0       0.24      0.85      0.37        26
+           1       0.95      0.50      0.65       141
+
+    accuracy                           0.55       167
+   macro avg       0.59      0.67      0.51       167
+weighted avg       0.84      0.55      0.61       167
+
+
+--- Classification report - PILL - seuil 85% (0.0011441939) ---
+              precision    recall  f1-score   support
+
+           0       0.23      0.92      0.37        26
+           1       0.97      0.43      0.59       141
+
+    accuracy                           0.50       167
+   macro avg       0.60      0.67      0.48       167
+weighted avg       0.85      0.50      0.56       167
+
+
+--- Classification report - PILL - seuil 90% (0.0011808936) ---
+              precision    recall  f1-score   support
+
+           0       0.21      0.92      0.35        26
+           1       0.96      0.38      0.54       141
+
+    accuracy                           0.46       167
+   macro avg       0.59      0.65      0.44       167
+weighted avg       0.85      0.46      0.51       167
+
+
+--- Classification report - PILL - seuil 95% (0.0012535725) ---
+              precision    recall  f1-score   support
+
+           0       0.18      0.92      0.31        26
+           1       0.94      0.24      0.38       141
+
+    accuracy                           0.35       167
+   macro avg       0.56      0.58      0.34       167
+weighted avg       0.83      0.35      0.37       167
+
+
+--- Classification report - PILL - seuil 99% (0.0012676661) ---
+              precision    recall  f1-score   support
+
+           0       0.18      0.92      0.30        26
+           1       0.94      0.23      0.37       141
+
+    accuracy                           0.34       167
+   macro avg       0.56      0.58      0.33       167
+weighted avg       0.82      0.34      0.36       167
+
+

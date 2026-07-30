@@ -1,0 +1,13 @@
+###################################################
+### Paramètres utilisés - catégorie hazelnut    ###
+###################################################
+Date : 2026-07-30 09:27:12
+resized_dimension  = (64, 64)
+batch_size         = 16
+grayscale          = False
+color_augmentation = False
+move_augmentation  = False
+model_type         = vae_transfer
+retrain_layers     = 0
+loss               = mae
+error_score        = mse
