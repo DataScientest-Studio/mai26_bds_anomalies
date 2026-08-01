@@ -66,7 +66,11 @@ def predict_images(images, filenames, models_selected, models):
                 images_to_process = np.array(images_to_process, dtype=np.float32) / 255.0
 
                 #print(f"images_to_process shape = {images_to_process.shape}")
-                pred = autoencoder.predict(images_to_process, batch_size=1, verbose=0)
+                #pred = autoencoder.predict(images_to_process, batch_size=1, verbose=0)
+                pred = autoencoder(
+                    tf.convert_to_tensor(images_to_process),
+                    training=False,
+                ).numpy()
 
                 if images_to_process.ndim == 3:
                     images_to_process = images_to_process[..., np.newaxis]
