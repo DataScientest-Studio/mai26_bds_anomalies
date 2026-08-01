@@ -1,0 +1,55 @@
+--- Classification report - ZIPPER - seuil 80% (0.0394393839) ---
+              precision    recall  f1-score   support
+
+           0       0.41      0.72      0.52        32
+           1       0.91      0.72      0.80       119
+
+    accuracy                           0.72       151
+   macro avg       0.66      0.72      0.66       151
+weighted avg       0.80      0.72      0.74       151
+
+
+--- Classification report - ZIPPER - seuil 85% (0.0395725444) ---
+              precision    recall  f1-score   support
+
+           0       0.40      0.72      0.52        32
+           1       0.90      0.71      0.80       119
+
+    accuracy                           0.72       151
+   macro avg       0.65      0.72      0.66       151
+weighted avg       0.80      0.72      0.74       151
+
+
+--- Classification report - ZIPPER - seuil 90% (0.0423579141) ---
+              precision    recall  f1-score   support
+
+           0       0.33      0.91      0.49        32
+           1       0.95      0.51      0.67       119
+
+    accuracy                           0.60       151
+   macro avg       0.64      0.71      0.58       151
+weighted avg       0.82      0.60      0.63       151
+
+
+--- Classification report - ZIPPER - seuil 95% (0.0442877114) ---
+              precision    recall  f1-score   support
+
+           0       0.30      1.00      0.46        32
+           1       1.00      0.37      0.54       119
+
+    accuracy                           0.50       151
+   macro avg       0.65      0.68      0.50       151
+weighted avg       0.85      0.50      0.52       151
+
+
+--- Classification report - ZIPPER - seuil 99% (0.0445628054) ---
+              precision    recall  f1-score   support
+
+           0       0.29      1.00      0.45        32
+           1       1.00      0.34      0.51       119
+
+    accuracy                           0.48       151
+   macro avg       0.65      0.67      0.48       151
+weighted avg       0.85      0.48      0.50       151
+
+

@@ -36,7 +36,7 @@ def predict_images(images, filenames, models_selected, models):
         images_to_process = []
         for image in image_batch:
             image = image.resize((model["resized_dimension"],model["resized_dimension"]))
-            if model["grayscale"] == 'True':
+            if model["grayscale"]:
                 print("GRAYSCALE")
                 image = image.convert('L')
             else:
@@ -47,8 +47,10 @@ def predict_images(images, filenames, models_selected, models):
         images_to_process = np.array(images_to_process)
         images_to_process = images_to_process / 255.
 
+        print(f"images_to_process shape = {images_to_process.shape}")
         pred = autoencoder.predict(images_to_process)
-        mse = tf.reduce_mean(tf.square(images_to_process - pred), axis=(1,2,3))
+        axes = tuple(range(1, len(images_to_process.shape)))
+        mse = tf.reduce_mean(tf.square(images_to_process - pred), axis=axes)
         fig = plot_image_comparison(images_to_process, filenames, autoencoder, get_grad_layer_name(model["model_type"]))
     return fig
 

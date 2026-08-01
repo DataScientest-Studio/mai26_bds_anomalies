@@ -302,9 +302,11 @@ def overlay_heatmap(image, heatmap, alpha=0.4):
     heatmap_colored = plt.cm.jet(heatmap_resized)[...,:3].astype(np.float32)
     #heatmap_colored = cv2.cvtColor(heatmap_colored, cv2.COLOR_BGR2RGB)
 
-    if image.shape[-1] == 1:
+    if image.shape[-1] == 1 or len(image.shape) == 2:
         image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
 
+    print("Shape image =", image.shape)
+    print("Shape heatmap_colored =", heatmap_colored.shape)
     overlay = cv2.addWeighted(image, 1 - alpha, heatmap_colored, alpha, 0)
 
     return overlay
@@ -333,7 +335,11 @@ def plot_image_comparison(orig_images, orig_labels, model, grad_layer_name=None)
         else:
             image_label = ''
 
-        if image_originale.ndim == 3 and image_originale.shape[2] > 1:
+        if image_originale.ndim == 2:
+            image_originale = image_originale[..., np.newaxis]
+        if image_autoencodee.ndim == 2:
+            image_autoencodee = image_autoencodee[..., np.newaxis]
+        if image_originale.shape[2] > 1: # si couleur
             image_erreur_mse = np.mean((image_originale - image_autoencodee)**2, axis=2)
             image_erreur_mae = np.abs(image_originale - image_autoencodee).mean(axis=2)
         else:
@@ -346,7 +352,7 @@ def plot_image_comparison(orig_images, orig_labels, model, grad_layer_name=None)
         subplot_index = (i*n_col)+1
         
         plt.subplot(nb_images,n_col, subplot_index)
-        if (image_originale.ndim == 2) or (image_originale.shape[2] == 1):
+        if image_originale.shape[2] == 1:
             plt.imshow( image_originale, cmap="gray")
         else:
             plt.imshow( image_originale)
@@ -363,6 +369,7 @@ def plot_image_comparison(orig_images, orig_labels, model, grad_layer_name=None)
             subplot_index+=1
         
         plt.subplot(nb_images,n_col, subplot_index)
+
         if (image_autoencodee.ndim == 2) or (image_originale.shape[2] == 1):
             plt.imshow( image_autoencodee, cmap="gray")
         else:

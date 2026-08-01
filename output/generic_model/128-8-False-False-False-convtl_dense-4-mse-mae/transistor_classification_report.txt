@@ -1,0 +1,55 @@
+--- Classification report - TRANSISTOR - seuil 80% (0.0387674831) ---
+              precision    recall  f1-score   support
+
+           0       0.85      0.88      0.87        60
+           1       0.82      0.78      0.79        40
+
+    accuracy                           0.84       100
+   macro avg       0.84      0.83      0.83       100
+weighted avg       0.84      0.84      0.84       100
+
+
+--- Classification report - TRANSISTOR - seuil 85% (0.0410448797) ---
+              precision    recall  f1-score   support
+
+           0       0.81      0.93      0.87        60
+           1       0.87      0.68      0.76        40
+
+    accuracy                           0.83       100
+   macro avg       0.84      0.80      0.81       100
+weighted avg       0.84      0.83      0.83       100
+
+
+--- Classification report - TRANSISTOR - seuil 90% (0.0433307737) ---
+              precision    recall  f1-score   support
+
+           0       0.78      0.93      0.85        60
+           1       0.86      0.60      0.71        40
+
+    accuracy                           0.80       100
+   macro avg       0.82      0.77      0.78       100
+weighted avg       0.81      0.80      0.79       100
+
+
+--- Classification report - TRANSISTOR - seuil 95% (0.0490361527) ---
+              precision    recall  f1-score   support
+
+           0       0.77      0.98      0.86        60
+           1       0.96      0.55      0.70        40
+
+    accuracy                           0.81       100
+   macro avg       0.86      0.77      0.78       100
+weighted avg       0.84      0.81      0.80       100
+
+
+--- Classification report - TRANSISTOR - seuil 99% (0.0543668903) ---
+              precision    recall  f1-score   support
+
+           0       0.70      1.00      0.82        60
+           1       1.00      0.35      0.52        40
+
+    accuracy                           0.74       100
+   macro avg       0.85      0.68      0.67       100
+weighted avg       0.82      0.74      0.70       100
+
+
