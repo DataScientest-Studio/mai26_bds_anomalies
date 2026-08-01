@@ -87,22 +87,22 @@ if not os.path.exists(parent_output_path):
 #categories = ['bottle', 'cable', 'capsule', 'carpet', 'grid',
 #    'hazelnut', 'leather', 'metal_nut', 'pill', 'screw', 'screw_preprocessed',
 #    'tile', 'toothbrush', 'transistor', 'wood', 'zipper', 'metal_plate']
-categories = ['bottle']
+categories = ['metal_plate']
 
-resized_dimension = (256,256)
+resized_dimension = (128,128)
 batch_size = 8
 
-grayscale = True
-color_augmentation=False
-move_augmentation=False
+grayscale = False
+color_augmentation=True
+move_augmentation=True
 
-model_type = 'convtl' # 'conv', 'dense_conv', 'conv_dense', 'dense', 'convtl', 'convtl_dense', 'vae_transfer'
-retrain_layers = 4 # en cas de transfer learning, indique le type et la profondeur du fine-tuning :
+model_type = 'conv_dense' # 'conv', 'dense_conv', 'conv_dense', 'dense', 'convtl', 'convtl_dense', 'vae_transfer'
+retrain_layers = 0 # en cas de transfer learning, indique le type et la profondeur du fine-tuning :
 # 0 : feature extraction uniquement, on ne ré-entraine pas le modèle
 # 1 à n : fine-tuning partiel, on fine-tune les n dernières couches du modèle
 # -1 : fine-tuning total
 loss = 'mae' # 'mae', 'mse'
-error_score = 'mse' # 'mae', 'mse'
+error_score = 'mse' if loss == 'mae' else 'mae' # 'mae', 'mse'
 
 threshold_percentile = 80
 

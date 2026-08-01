@@ -20,7 +20,7 @@ weighted avg       0.80      0.72      0.74       151
 weighted avg       0.80      0.72      0.74       151
 
 
---- Classification report - ZIPPER - seuil 90% (0.0423579141) ---
+--- Classification report - ZIPPER - seuil 90% (0.0423579067) ---
               precision    recall  f1-score   support
 
            0       0.33      0.91      0.49        32

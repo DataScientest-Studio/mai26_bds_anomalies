@@ -1,7 +1,7 @@
 ###################################################
 ### Paramètres utilisés - catégorie metal_nut   ###
 ###################################################
-Date : 2026-08-01 11:59:15
+Date : 2026-08-01 18:22:49
 resized_dimension  = (128, 128)
 batch_size         = 8
 grayscale          = False

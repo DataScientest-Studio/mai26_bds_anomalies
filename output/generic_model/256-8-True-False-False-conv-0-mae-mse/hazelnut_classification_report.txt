@@ -42,7 +42,7 @@ weighted avg       0.81      0.67      0.67       110
 weighted avg       0.83      0.66      0.66       110
 
 
---- Classification report - HAZELNUT - seuil 99% (0.0006329590) ---
+--- Classification report - HAZELNUT - seuil 99% (0.0006329591) ---
               precision    recall  f1-score   support
 
            0       0.47      1.00      0.64        40
