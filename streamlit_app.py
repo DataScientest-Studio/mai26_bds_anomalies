@@ -15,7 +15,7 @@ from generic_model.autoencoder_model import load_autoencoder, get_grad_layer_nam
 from generic_model.autoencode_figures import plot_image_comparison
 
 from PIL import Image
-import re
+import re, csv
 
 from dotenv import load_dotenv
 from pathlib import Path
@@ -85,7 +85,7 @@ def predict_images(images, filenames, models_selected, models):
                 # else:
                 #     error_values = tf.reduce_mean(tf.abs(images_to_process - pred), axis=axes)
                 # Récupération du seuil
-                threshold = load_threshold(output_path / model["folder"], model["category"])
+                threshold, fpr, tpr = load_threshold(output_path / model["folder"], model["category"])
 
                 fig = plot_image_comparison(
                     images_to_process,
@@ -93,6 +93,8 @@ def predict_images(images, filenames, models_selected, models):
                     autoencoder,
                     error_score = model["error_score"], 
                     threshold=threshold, 
+                    fpr = fpr, 
+                    tpr = tpr, 
                     grad_layer_name=get_grad_layer_name(model["model_type"]),
                     encoded_images=pred,
                 )
@@ -166,16 +168,66 @@ def load_model_list(train_result_filename):
     best_by_cat = df.loc[df.groupby(["category"])["roc_auc"].idxmax()]
     return best_by_cat
 
+def best_threshold_from_roc(roc_path):
+    best_threshold = None
+    best_youden_index = float("-inf")
+    best_fpr = float("inf")
+    corresponding_tpr = 0
+
+    with open(roc_path, "r", newline="") as f:
+        reader = csv.reader(f)
+
+        for row in reader:
+            if len(row) < 3:
+                continue
+
+            try:
+                threshold = float(row[0])
+                fpr = float(row[1])
+                tpr = float(row[2])
+            except ValueError:
+                continue
+
+            # Le premier seuil peut être inf : il n'est pas utilisable
+            if threshold == float("inf"):
+                continue
+
+            youden_index = tpr - fpr
+
+            # En cas d'égalité, on privilégie le plus faible FPR
+            if (
+                youden_index > best_youden_index
+                or (
+                    youden_index == best_youden_index
+                    and fpr < best_fpr
+                )
+            ):
+                best_youden_index = youden_index
+                best_threshold = threshold
+                best_fpr = fpr
+                corresponding_tpr = tpr
+
+    if best_threshold is not None:
+        print(
+            f"Optimal ROC threshold: {best_threshold} "
+            f"(Youden index={best_youden_index:.4f}, FPR={best_fpr:.4f})"
+        )
+    return best_threshold, best_fpr, corresponding_tpr
+
 def load_threshold(model_path, category):
-    #print(f"CALLING with {model_path} and {category}")
-    with open(model_path / f"{category}_classification_report.txt", "r") as f:
-        line = f.readline()
-    #print("Line read:", line)
-    threshold = re.search(r'\(([-+]?\d*\.?\d+(?:[eE][-+]?\d+)?)\)', line)
-    if threshold is not None:
-        threshold = float(threshold.group(1))
+    print(f"Model of {category} in path: {model_path}")
+    roc_path = model_path / f"{category}_roc_curve.txt"
+    if roc_path.exists():
+        return best_threshold_from_roc(roc_path=roc_path)
+    else:
+        with open(model_path / f"{category}_classification_report.txt", "r") as f:
+            line = f.readline()
+        #print("Line read:", line)
+        threshold = re.search(r'\(([-+]?\d*\.?\d+(?:[eE][-+]?\d+)?)\)', line)
+        if threshold is not None:
+            threshold = float(threshold.group(1))
     #print("Threshold =", str(threshold))
-    return threshold
+    return threshold, None, None
 
 ##### PAGE CONTENT #####
 st.set_page_config(layout="wide")

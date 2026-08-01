@@ -210,9 +210,13 @@ def save_classification_report(y_true, y_pred, output_path, output_filename="cla
         f.write("\n\n")
 
 @logging_function
-def draw_roc_curve(mses, labels, output_path, output_filename="roc_curve.png", category=""):
+def draw_roc_curve(mses, labels, output_path, output_filename_png="roc_curve.png", output_filename_txt="roc_curve.txt", category=""):
 
     fpr, tpr, thresholds = roc_curve(labels, mses)
+    with open(output_path / output_filename_txt, "w") as f:
+        for threshold, v_fpr, v_tpr in zip(thresholds, fpr, tpr):
+            f.write(f"{threshold},{v_fpr},{v_tpr}\n")
+
     roc_auc = auc(fpr, tpr)
 
     plt.figure(figsize=(8,6))
@@ -226,7 +230,7 @@ def draw_roc_curve(mses, labels, output_path, output_filename="roc_curve.png", c
     plt.ylabel('True Positive Rate')
     plt.title(f"ROC Curve - {category}")
     plt.legend(loc="lower right")
-    plt.savefig(output_path / output_filename)
+    plt.savefig(output_path / output_filename_png)
 
     return roc_auc
 
@@ -309,8 +313,8 @@ def overlay_heatmap(image, heatmap, alpha=0.4):
     if image.shape[-1] == 1 or len(image.shape) == 2:
         image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
 
-    print("Shape image =", image.shape)
-    print("Shape heatmap_colored =", heatmap_colored.shape)
+    #print("Shape image =", image.shape)
+    #print("Shape heatmap_colored =", heatmap_colored.shape)
     overlay = cv2.addWeighted(image, 1 - alpha, heatmap_colored, alpha, 0)
 
     return overlay
@@ -318,7 +322,7 @@ def overlay_heatmap(image, heatmap, alpha=0.4):
 
 # Visualisation des images reconstruites
 @logging_function
-def plot_image_comparison(orig_images, orig_labels, model, error_score, threshold=None, grad_layer_name=None, encoded_images=None):
+def plot_image_comparison(orig_images, orig_labels, model, error_score, threshold=None, fpr=None, tpr=None, grad_layer_name=None, encoded_images=None):
     """ Affiche les num_images premières images originales, leur grad-cam, leur version auto-encodées et leurs différences (MSE).
     """
 
@@ -380,13 +384,17 @@ def plot_image_comparison(orig_images, orig_labels, model, error_score, threshol
         prediction_text = ""
         if threshold is not None:
             if error_score=='mse':
-                prediction = mse >= threshold
+                anomaly = mse >= threshold
             else:
-                prediction = mae >= threshold
-            prediction_text = f" - (identified as {'anomaly' if prediction else 'good'})"
+                anomaly = mae >= threshold
+            prediction_text = f" - ({'anomaly' if anomaly else 'good'})"
 
-        titre = f"{image_label} - Threshold {error_score.upper()} = {threshold:.4f}"
+        titre = f"{image_label}"
+        titre += f" - Threshold {error_score.upper()} = {threshold:.4f}"
+        if fpr is not None and tpr is not None:
+            titre += f" (FPR={fpr*100:.2f}%, TPR={tpr*100:.2f}%)"
         titre += prediction_text
+        color="red" if anomaly else "green"
 
         ax_title = fig.add_subplot(gs[2*i, :])
         ax_title.axis("off")
@@ -396,7 +404,7 @@ def plot_image_comparison(orig_images, orig_labels, model, error_score, threshol
                 width=0.1,
                 height=1,
                 transform=ax_title.transAxes,
-                color="red" if prediction else "green",
+                color=color,
             )
         )
         # Rectangle droit
@@ -406,7 +414,7 @@ def plot_image_comparison(orig_images, orig_labels, model, error_score, threshol
                 width=0.1,
                 height=1.0,
                 transform=ax_title.transAxes,
-                color="red" if prediction else "green",
+                color=color,
                 clip_on=False,
             )
         )

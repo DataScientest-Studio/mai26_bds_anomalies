@@ -87,16 +87,16 @@ if not os.path.exists(parent_output_path):
 #categories = ['bottle', 'cable', 'capsule', 'carpet', 'grid',
 #    'hazelnut', 'leather', 'metal_nut', 'pill', 'screw', 'screw_preprocessed',
 #    'tile', 'toothbrush', 'transistor', 'wood', 'zipper', 'metal_plate']
-categories = ['wood']
+categories = ['bottle']
 
-resized_dimension = (224,224)
+resized_dimension = (256,256)
 batch_size = 8
 
-grayscale = False
+grayscale = True
 color_augmentation=False
 move_augmentation=False
 
-model_type = 'convtl_dense' # 'conv', 'dense_conv', 'conv_dense', 'dense', 'convtl', 'convtl_dense', 'vae_transfer'
+model_type = 'convtl' # 'conv', 'dense_conv', 'conv_dense', 'dense', 'convtl', 'convtl_dense', 'vae_transfer'
 retrain_layers = 4 # en cas de transfer learning, indique le type et la profondeur du fine-tuning :
 # 0 : feature extraction uniquement, on ne ré-entraine pas le modèle
 # 1 à n : fine-tuning partiel, on fine-tune les n dernières couches du modèle
@@ -331,7 +331,8 @@ for category in categories:
     roc_auc = fig.draw_roc_curve(test_errors, 
                     y_true, 
                     output_path, 
-                    output_filename=f"{category}_roc_curve.png", 
+                    output_filename_png=f"{category}_roc_curve.png", 
+                    output_filename_txt=f"{category}_roc_curve.txt", 
                     category=category)
 
     # Visualisation des images reconstruites pour les anomalies
