@@ -20,7 +20,7 @@ weighted avg       0.83      0.58      0.60       160
 weighted avg       0.82      0.42      0.39       160
 
 
---- Classification report - SCREW_PREPROCESSED - seuil 90% (0.0004650975) ---
+--- Classification report - SCREW_PREPROCESSED - seuil 90% (0.0004650976) ---
               precision    recall  f1-score   support
 
            0       0.29      1.00      0.45        41

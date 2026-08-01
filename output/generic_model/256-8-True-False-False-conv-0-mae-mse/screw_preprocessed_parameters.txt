@@ -1,13 +1,13 @@
 ###################################################
 ### Paramètres utilisés - catégorie screw_preprocessed ###
 ###################################################
-Date : 2026-07-22 13:42:12
+Date : 2026-08-01 18:40:19
 resized_dimension  = (256, 256)
 batch_size         = 8
 grayscale          = True
 color_augmentation = False
 move_augmentation  = False
 model_type         = conv
-retrain_layers     = 8
+retrain_layers     = 0
 loss               = mae
 error_score        = mse
