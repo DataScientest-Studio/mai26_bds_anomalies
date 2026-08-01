@@ -1,5 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
+from matplotlib.patches import Rectangle
 import seaborn as sns
 
 from sklearn.metrics import confusion_matrix, classification_report
@@ -316,7 +318,7 @@ def overlay_heatmap(image, heatmap, alpha=0.4):
 
 # Visualisation des images reconstruites
 @logging_function
-def plot_image_comparison(orig_images, orig_labels, model, grad_layer_name=None, encoded_images=None):
+def plot_image_comparison(orig_images, orig_labels, model, error_score, threshold=None, grad_layer_name=None, encoded_images=None):
     """ Affiche les num_images premières images originales, leur grad-cam, leur version auto-encodées et leurs différences (MSE).
     """
 
@@ -332,8 +334,25 @@ def plot_image_comparison(orig_images, orig_labels, model, grad_layer_name=None,
             encoded_images=encoded_images,
         )
 
+
+    n_col = 5
+    if grad_layer_name is None:
+        n_col = 4
+
     nb_images = len(orig_images)
     fig = plt.figure(figsize=(14,3*nb_images))
+
+    # Lignes de titre pour chaque image
+    height_ratios = [0.15, 1] * nb_images
+    gs = gridspec.GridSpec(
+        nb_images * 2,
+        n_col,
+        figure=fig,
+        height_ratios=height_ratios,
+        hspace=0.35,
+        wspace=0.35,
+    )
+
     for i, image_originale in enumerate(orig_images):
         
         image_autoencodee = encoded_images[i]
@@ -354,12 +373,64 @@ def plot_image_comparison(orig_images, orig_labels, model, grad_layer_name=None,
             image_erreur_mse = (image_originale - image_autoencodee)**2
             image_erreur_mae = np.abs(image_originale - image_autoencodee)
 
-        n_col = 5
-        if grad_layer_name is None:
-            n_col = 4
-        subplot_index = (i*n_col)+1
-        
-        plt.subplot(nb_images,n_col, subplot_index)
+        mae = np.mean(np.abs(image_originale - image_autoencodee))
+        mse = np.mean((image_originale - image_autoencodee) ** 2)
+
+        # TITRE de la ligne
+        prediction_text = ""
+        if threshold is not None:
+            if error_score=='mse':
+                prediction = mse >= threshold
+            else:
+                prediction = mae >= threshold
+            prediction_text = f" - (identified as {'anomaly' if prediction else 'good'})"
+
+        titre = f"{image_label} - Threshold {error_score.upper()} = {threshold:.4f}"
+        titre += prediction_text
+
+        ax_title = fig.add_subplot(gs[2*i, :])
+        ax_title.axis("off")
+        ax_title.add_patch(
+            Rectangle(
+                (0.01, 0.01),
+                width=0.1,
+                height=1,
+                transform=ax_title.transAxes,
+                color="red" if prediction else "green",
+            )
+        )
+        # Rectangle droit
+        ax_title.add_patch(
+            Rectangle(
+                (0.98, 0.0),
+                width=0.1,
+                height=1.0,
+                transform=ax_title.transAxes,
+                color="red" if prediction else "green",
+                clip_on=False,
+            )
+        )
+        ax_title.text(
+            0.5,
+            0.5,
+            titre,
+            ha="center",
+            va="center",
+            fontsize=14,
+        )
+        # y = 1 - (i + 0.05) / nb_images
+        # fig.text(
+        #     0.5, y,
+        #     titre,
+        #     ha="center",
+        #     fontsize=14,
+        #     fontweight="bold"
+        # )
+
+        subplot_index = 0 #(i*n_col)+1
+
+        ax = fig.add_subplot(gs[2*i+1, subplot_index])
+        #plt.subplot(nb_images,n_col, subplot_index)
         if image_originale.shape[2] == 1:
             plt.imshow( image_originale, cmap="gray")
         else:
@@ -369,14 +440,14 @@ def plot_image_comparison(orig_images, orig_labels, model, grad_layer_name=None,
         subplot_index+=1
 
         if grad_layer_name is not None:
-            plt.subplot(nb_images,n_col, subplot_index)
+            ax = fig.add_subplot(gs[2*i+1, subplot_index])
             overlay = overlay_heatmap(image_originale, heatmaps[i])
             plt.imshow( overlay)
             plt.axis('off')
             plt.title("Grad-cam")
             subplot_index+=1
         
-        plt.subplot(nb_images,n_col, subplot_index)
+        ax = fig.add_subplot(gs[2*i+1, subplot_index])
 
         if (image_autoencodee.ndim == 2) or (image_originale.shape[2] == 1):
             plt.imshow( image_autoencodee, cmap="gray")
@@ -386,20 +457,16 @@ def plot_image_comparison(orig_images, orig_labels, model, grad_layer_name=None,
         plt.title("Auto-encodé")
         subplot_index+=1
         
-        plt.subplot(nb_images,n_col, subplot_index)
+        ax = fig.add_subplot(gs[2*i+1, subplot_index])
         plt.imshow( image_erreur_mae , cmap="hot" , vmin=0, vmax=1)
         plt.axis('off')
-        mae = np.mean(np.abs(image_originale - image_autoencodee))
-        mse = np.mean((image_originale - image_autoencodee) ** 2)
 
         plt.title(f"MAE={mae:.5f}")
         subplot_index+=1
         
-        plt.subplot(nb_images,n_col, subplot_index)
+        ax = fig.add_subplot(gs[2*i+1, subplot_index])
         plt.imshow( image_erreur_mse , cmap="hot" , vmin=0, vmax=1)
         plt.axis('off')
-        mae = np.mean(np.abs(image_originale - image_autoencodee))
-        mse = np.mean((image_originale - image_autoencodee) ** 2)
 
         plt.title(f"MSE={mse:.5f}")
         subplot_index+=1
