@@ -1,4 +1,11 @@
 import streamlit as st
+import gc
+import os
+
+# TensorFlow doit voir cet env var avant son import. L'allocateur par defaut
+# garde souvent la memoire GPU dans un pool interne au processus Streamlit.
+os.environ.setdefault("TF_GPU_ALLOCATOR", "cuda_malloc_async")
+
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -9,7 +16,6 @@ from generic_model.autoencode_figures import plot_image_comparison
 
 from PIL import Image
 
-import os
 from dotenv import load_dotenv
 from pathlib import Path
 load_dotenv()
@@ -19,9 +25,16 @@ category="wood"
 output_path = Path(__file__).parent.joinpath("output") / "generic_model"
 model_file = output_path / "64-16-False-True-True-conv_dense-0-mae-mse" / f"{category}_autoencoder.keras"
 
+for gpu in tf.config.list_physical_devices("GPU"):
+    try:
+        tf.config.experimental.set_memory_growth(gpu, True)
+    except RuntimeError:
+        pass
+
 def predict_images(images, filenames, models_selected, models):
     print("MODEL FILES =", models_selected)
 
+    fig = None
     position = 0
     for indice, groupe in groupby(models_selected):
         taille = len(list(groupe))
@@ -30,28 +43,48 @@ def predict_images(images, filenames, models_selected, models):
         position += taille
         model = models.iloc[indice]
 
-        autoencoder = load_autoencoder(output_path / model["filepath"])
+        autoencoder = None
+        images_to_process = None
+        pred = None
+        try:
+            autoencoder = load_autoencoder(output_path / model["filepath"])
 
-        print("NEW BATCH")
-        images_to_process = []
-        for image in image_batch:
-            image = image.resize((model["resized_dimension"],model["resized_dimension"]))
-            if model["grayscale"]:
-                print("GRAYSCALE")
-                image = image.convert('L')
-            else:
-                print("COLOR")
-                image = image.convert('RGB')
-            print("Image shape=", np.array(image).shape)
-            images_to_process.append(np.array(image))
-        images_to_process = np.array(images_to_process)
-        images_to_process = images_to_process / 255.
+            print("NEW BATCH")
+            images_to_process = []
+            for image in image_batch:
+                image = image.resize((model["resized_dimension"],model["resized_dimension"]))
+                if model["grayscale"]:
+                    print("GRAYSCALE")
+                    image = image.convert('L')
+                else:
+                    print("COLOR")
+                    image = image.convert('RGB')
+                print("Image shape=", np.array(image).shape)
+                images_to_process.append(np.array(image))
+            images_to_process = np.array(images_to_process, dtype=np.float32) / 255.0
 
-        print(f"images_to_process shape = {images_to_process.shape}")
-        pred = autoencoder.predict(images_to_process)
-        axes = tuple(range(1, len(images_to_process.shape)))
-        mse = tf.reduce_mean(tf.square(images_to_process - pred), axis=axes)
-        fig = plot_image_comparison(images_to_process, filenames, autoencoder, get_grad_layer_name(model["model_type"]))
+            print(f"images_to_process shape = {images_to_process.shape}")
+            pred = autoencoder.predict(images_to_process, batch_size=1, verbose=0)
+
+            if images_to_process.ndim == 3:
+                images_to_process = images_to_process[..., np.newaxis]
+            if pred.ndim == 3:
+                pred = pred[..., np.newaxis]
+            axes = tuple(range(1, len(images_to_process.shape)))
+            mse = tf.reduce_mean(tf.square(images_to_process - pred), axis=axes)
+
+            fig = plot_image_comparison(
+                images_to_process,
+                filenames[position - taille:position],
+                autoencoder,
+                get_grad_layer_name(model["model_type"]),
+                encoded_images=pred,
+            )
+        finally:
+            del autoencoder, images_to_process, pred
+            gc.collect()
+            tf.keras.backend.clear_session()
+            gc.collect()
     return fig
 
 def image_grid(image_batch, filenames, model_names):
@@ -133,6 +166,11 @@ image_grid(images, filenames, np.array(models['model_name']))
 if st.button("Analyser l'image", icon=":material/image_search:"):
     if images is not None and len(images) > 0:
         with st.spinner("Génération en cours..."):
+            if st.session_state.figure_compare is not None:
+                st.session_state.figure_compare.clf()
+                st.session_state.figure_compare = None
+                gc.collect()
+
             model_selections=[]
             for i in range(len(images)):
                 model_selections.append( st.session_state[f"model_selection_{i}"] )

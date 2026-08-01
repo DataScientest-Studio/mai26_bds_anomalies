@@ -239,7 +239,7 @@ def tensor_stats(name, tensor):
         f"zeros={tf.reduce_mean(tf.cast(tensor == 0, tf.float32)).numpy():.2%}",
     )
 
-def make_gradcam_heatmap(img_array, autoencoder, last_conv_layer_name):
+def make_gradcam_heatmap(img_array, autoencoder, last_conv_layer_name, encoded_images=None):
     #encoder = autoencoder.get_layer(encoder_model_name)
     last_conv_layer = autoencoder.get_layer(last_conv_layer_name)
 
@@ -289,7 +289,9 @@ def make_gradcam_heatmap(img_array, autoencoder, last_conv_layer_name):
             tensor_stats("raw_heatmaps", raw_heatmaps[i])
             tensor_stats("heatmaps après ReLU", heatmaps[i])
 
-    return heatmaps.numpy(), reconstructions.numpy()
+    if encoded_images is None:
+        encoded_images = reconstructions.numpy()
+    return heatmaps.numpy(), encoded_images
 
 def overlay_heatmap(image, heatmap, alpha=0.4):
     # Conversion TensorFlow vers NumPy si nécessaire
@@ -314,15 +316,21 @@ def overlay_heatmap(image, heatmap, alpha=0.4):
 
 # Visualisation des images reconstruites
 @logging_function
-def plot_image_comparison(orig_images, orig_labels, model, grad_layer_name=None):
+def plot_image_comparison(orig_images, orig_labels, model, grad_layer_name=None, encoded_images=None):
     """ Affiche les num_images premières images originales, leur grad-cam, leur version auto-encodées et leurs différences (MSE).
     """
 
     if grad_layer_name is None or grad_layer_name == "":
-        encoded_images = model.predict(orig_images)
+        if encoded_images is None:
+            encoded_images = model.predict(orig_images, batch_size=1, verbose=0)
         grad_layer_name = None
     else:
-        heatmaps, encoded_images = make_gradcam_heatmap(orig_images, model, last_conv_layer_name=grad_layer_name)
+        heatmaps, encoded_images = make_gradcam_heatmap(
+            orig_images,
+            model,
+            last_conv_layer_name=grad_layer_name,
+            encoded_images=encoded_images,
+        )
 
     nb_images = len(orig_images)
     fig = plt.figure(figsize=(14,3*nb_images))
