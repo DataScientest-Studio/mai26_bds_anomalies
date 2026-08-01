@@ -13,6 +13,7 @@ from itertools import groupby
 
 from generic_model.autoencoder_model import load_autoencoder, get_grad_layer_name
 from generic_model.autoencode_figures import plot_image_comparison
+from generic_model.preprocessing_screw import preprocess_screw
 
 from PIL import Image
 import re, csv
@@ -55,6 +56,9 @@ def predict_images(images, filenames, models_selected, models):
                 images_to_process = []
                 for image in image_batch:
                     image = image.resize((model["resized_dimension"],model["resized_dimension"]))
+                    if model["category"]=="screw_preprocessed":
+                        image_arr = preprocess_screw(np.array(image))
+                        image = Image.fromarray(image_arr)
                     if model["grayscale"]:
                         print("GRAYSCALE")
                         image = image.convert('L')
