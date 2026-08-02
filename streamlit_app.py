@@ -289,11 +289,20 @@ with tab_models:
                             "grayscale", "color_augmentation", "move_augmentation", 
                             "resized_dimension", "batch_size", "retrain_layers", 
                             "loss", "error_score"]]
+    # multi-sélection parmi model_display["category"]
+    selected_models = st.multiselect(
+        "Catégorie(s)", 
+        options=model_display["category"].tolist(),
+    )
 
-    st.dataframe(model_display)
+    if selected_models is not None and len(selected_models) > 0:
+        model_display = model_display[model_display["category"].isin(selected_models)]
+    
+    st.dataframe(model_display, hide_index=True)
+    
     st.markdown("## Meilleur modèle par catégorie")
 
-    fig = plt.figure(figsize=(14,6))
+    fig = plt.figure(figsize=(14,2.5))
     sns.barplot(data=models, x="category", y="roc_auc", hue="model_type")
     plt.xticks(rotation=30, ha="right")
     plt.ylim(0.7,1.0)
@@ -307,10 +316,13 @@ with tab_models:
 
     st.markdown("## Comparaison de l'ensemble des modèles")
     bests_by_model_cat = all_models.loc[all_models.groupby(["model_type", "category"])["roc_auc"].idxmax()]
-    ct_model_cat = pd.crosstab(bests_by_model_cat["model_type"], bests_by_model_cat["category"], bests_by_model_cat["roc_auc"], 
+    if selected_models is not None and len(selected_models) > 0:
+        bests_by_model_cat = bests_by_model_cat[bests_by_model_cat["category"].isin(selected_models)]
+    
+    ct_model_cat = pd.crosstab(bests_by_model_cat["category"], bests_by_model_cat["model_type"], bests_by_model_cat["roc_auc"], 
                 rownames=["Catégories"], colnames=["Model types"], aggfunc="max")
 
-    fig2 = plt.figure(figsize=(16,6))
+    fig2 = plt.figure(figsize=(16,len(ct_model_cat)*0.5))
     sns.heatmap(ct_model_cat, cmap="coolwarm", annot=True, fmt=".3f")
     plt.yticks(rotation=0)
     plt.title("Meilleurs ROC AUC par modèle et par catégorie")
