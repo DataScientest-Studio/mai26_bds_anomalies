@@ -148,6 +148,16 @@ def preprocess_screw(image, mask=None):
     else:
         return image, mask
 
+def preprocess_screw_rgb(image):
+    """Preprocess an RGB image with the BGR pipeline used to build the dataset."""
+    image = np.asarray(image)
+    if image.ndim != 3 or image.shape[-1] != 3:
+        raise ValueError("preprocess_screw_rgb expects an RGB image with 3 channels")
+
+    image_bgr = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+    processed_bgr = preprocess_screw(image_bgr)
+    return cv2.cvtColor(processed_bgr, cv2.COLOR_BGR2RGB)
+
 def preprocess_screw_tf(image):
     processed_image = tf.numpy_function(
         func=preprocess_screw,
