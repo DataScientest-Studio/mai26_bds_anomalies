@@ -1,6 +1,8 @@
 import streamlit as st
 import gc
 import os
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 # TensorFlow doit voir cet env var avant son import. L'allocateur par defaut
 # garde souvent la memoire GPU dans un pool interne au processus Streamlit.
@@ -170,7 +172,7 @@ def load_model_list(train_result_filename):
 
     df = df.sort_values(["category", "roc_auc"], ascending=[True, False])
     best_by_cat = df.loc[df.groupby(["category"])["roc_auc"].idxmax()]
-    return best_by_cat
+    return df, best_by_cat
 
 def best_threshold_from_roc(roc_path):
     best_threshold = None
@@ -237,45 +239,79 @@ def load_threshold(model_path, category):
 st.set_page_config(layout="wide")
 change_margin_top_selectbox()
 
-models = load_model_list(output_path / '0_train_results.csv')
+all_models, models = load_model_list(output_path / '0_train_results.csv')
 
 if "figure_compare" not in st.session_state:
     st.session_state.figure_compare = None
 
 st.title("Détection d'anomalies")
 
-uploaded_files = st.file_uploader(
-    "Envoi des images à analyser", accept_multiple_files=True, type="image"
-)
-images=[]
-filenames = []
-for uploaded_file in uploaded_files:
-    image = Image.open(uploaded_file)
-    images.append(image)
-    filenames.append(uploaded_file.name)
-image_grid(images, filenames, np.array(models['model_name']))
+tab_analyse, tab_models = st.tabs(["Analyse", "Modèles"])
 
-#st.image(image)
-if st.button("Analyser l'image", icon=":material/image_search:"):
-    if images is not None and len(images) > 0:
-        with st.spinner("Génération en cours..."):
-            if st.session_state.figure_compare is not None:
-                for fig in st.session_state.figure_compare:
-                    fig.clf()
-                st.session_state.figure_compare = None
-                gc.collect()
+with tab_analyse:
+    uploaded_files = st.file_uploader(
+        "Envoi des images à analyser", accept_multiple_files=True, type="image"
+    )
+    images=[]
+    filenames = []
+    for uploaded_file in uploaded_files:
+        image = Image.open(uploaded_file)
+        images.append(image)
+        filenames.append(uploaded_file.name)
+    image_grid(images, filenames, np.array(models['model_name']))
 
-            model_selections=[]
-            for i in range(len(images)):
-                model_selections.append( st.session_state[f"model_selection_{i}"] )
+    if st.button("Analyser les images", icon=":material/image_search:"):
+        if images is not None and len(images) > 0:
+            with st.spinner("Génération en cours..."):
+                if st.session_state.figure_compare is not None:
+                    for fig in st.session_state.figure_compare:
+                        fig.clf()
+                    st.session_state.figure_compare = None
+                    gc.collect()
 
-            #print("Model selections =", model_selections)
-            st.session_state.figure_compare = predict_images(images, filenames, models_selected=model_selections, models=models)
-    else:
-        st.session_state.figure_compare=None
+                model_selections=[]
+                for i in range(len(images)):
+                    model_selections.append( st.session_state[f"model_selection_{i}"] )
 
-if st.session_state.figure_compare is not None:
-    for fig in st.session_state.figure_compare:
-        st.pyplot(
-            fig
-        )
+                #print("Model selections =", model_selections)
+                st.session_state.figure_compare = predict_images(images, filenames, models_selected=model_selections, models=models)
+        else:
+            st.session_state.figure_compare=None
+
+    if st.session_state.figure_compare is not None:
+        for fig in st.session_state.figure_compare:
+            st.pyplot(
+                fig
+            )
+with tab_models:
+    # Display models
+    model_display = models[["category", "model_type", "roc_auc", 
+                            "grayscale", "color_augmentation", "move_augmentation", 
+                            "resized_dimension", "batch_size", "retrain_layers", 
+                            "loss", "error_score"]]
+
+    st.dataframe(model_display)
+    st.markdown("## Meilleur modèle par catégorie")
+
+    fig = plt.figure(figsize=(14,6))
+    sns.barplot(data=models, x="category", y="roc_auc", hue="model_type")
+    plt.xticks(rotation=30, ha="right")
+    plt.ylim(0.7,1.0)
+    plt.grid(axis='y')
+    plt.ylabel("Meilleur ROC AUC")
+    plt.xlabel("Catégories")
+    plt.title("Meilleur ROC AUC par catégorie")
+
+    plt.legend(title="Model Type")
+    st.pyplot(fig)
+
+    st.markdown("## Comparaison de l'ensemble des modèles")
+    bests_by_model_cat = all_models.loc[all_models.groupby(["model_type", "category"])["roc_auc"].idxmax()]
+    ct_model_cat = pd.crosstab(bests_by_model_cat["model_type"], bests_by_model_cat["category"], bests_by_model_cat["roc_auc"], 
+                rownames=["Catégories"], colnames=["Model types"], aggfunc="max")
+
+    fig2 = plt.figure(figsize=(16,6))
+    sns.heatmap(ct_model_cat, cmap="coolwarm", annot=True, fmt=".3f")
+    plt.yticks(rotation=0)
+    plt.title("Meilleurs ROC AUC par modèle et par catégorie")
+    st.pyplot(fig2)
