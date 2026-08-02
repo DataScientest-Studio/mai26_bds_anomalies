@@ -15,7 +15,7 @@ from itertools import groupby
 
 from generic_model.autoencoder_model import load_autoencoder, get_grad_layer_name
 from generic_model.autoencode_figures import plot_image_comparison
-from generic_model.preprocessing_screw import preprocess_screw
+from generic_model.preprocessing_screw import preprocess_screw_rgb
 
 from PIL import Image
 import re, csv
@@ -57,18 +57,23 @@ def predict_images(images, filenames, models_selected, models):
                 print("NEW BATCH")
                 images_to_process = []
                 for image in image_batch:
-                    image = image.resize((model["resized_dimension"],model["resized_dimension"]))
+                    image_arr = np.array(image.convert("RGB"))
                     if model["category"]=="screw_preprocessed":
-                        image_arr = preprocess_screw(np.array(image))
-                        image = Image.fromarray(image_arr)
+                        # Le dataset a ete pretraite en BGR a sa resolution
+                        # d'origine, puis redimensionne par le loader Keras.
+                        image_arr = preprocess_screw_rgb(image_arr)
+                    image_tensor = tf.convert_to_tensor(image_arr)
                     if model["grayscale"]:
                         print("GRAYSCALE")
-                        image = image.convert('L')
+                        image_tensor = tf.image.rgb_to_grayscale(image_tensor)
                     else:
                         print("COLOR")
-                        image = image.convert('RGB')
-                    #print("Image shape=", np.array(image).shape)
-                    images_to_process.append(np.array(image))
+                    image_tensor = tf.image.resize(
+                        image_tensor,
+                        (model["resized_dimension"], model["resized_dimension"]),
+                        method="bilinear",
+                    )
+                    images_to_process.append(image_tensor.numpy())
                 images_to_process = np.array(images_to_process, dtype=np.float32) / 255.0
 
                 #print(f"images_to_process shape = {images_to_process.shape}")
